@@ -54,7 +54,7 @@ for (const [arcadeCode, keys] of Object.entries(CABINET_KEYS)) {
 const LEVELS = [
   { n: 'DORMITORIO', bg: ['b0a'], f: [0.25], v: [240, 280], len: 4500 },
   { n: 'CERRO SAN CRISTÓBAL', bg: ['b1a', 'b1b'], v: [290, 390], len: 15000, lm: ['sc1v', 'sc1c'], tile: 'tg', ob: 'ob1', g: [70, 190], w: [260, 620], mud: 1, cab: 1 },
-  { n: 'COSTANERA CENTER', bg: ['b2a', 'b2b'], v: [320, 440], len: 16000, lm: ['cco0', 'cco1'], tile: 'tr', ob: 'ob2', g: [90, 220], w: [200, 560], quake: 1 },
+  { n: 'COSTANERA CENTER', bg: ['b2a', 'b2b'], v: [290, 380], len: 16000, lm: ['cco0', 'cco1'], tile: 'tr', ob: 'ob2', g: [70, 170], w: [280, 600], quake: 1, oc: 0.3 },
   // tsu reskins the mud chaser as a tsunami.
   { n: 'RAPA NUI', bg: ['rnA', 'rnB'], v: [340, 470], len: 17000, lm: ['rn0', 'rn2'], tile: 'trn', ob: 'obr', g: [100, 235], w: [190, 520], mud: 1, tsu: 1 },
   { n: 'VILLARRICA', bg: ['vla', 'vlb'], v: [290, 380], len: 17500, lm: ['vlm0', 'vlm1', 'vlm2'], tile: 'vlt', ob: 'vlo', g: [70, 170], w: [280, 600], volc: 1 },
@@ -439,7 +439,7 @@ function gen(sc) {
     const x = st.gx + gap;
     for (let j = 1; j < 4; j++) ban(sc, st.gx + (gap * j) / 4, min(st.top, top) - 70 - sin((j / 4) * PI) * 50);
     plat(sc, x, w, top, L.tile, L.quake && w < 400 && random() < 0.4);
-    if (w > 260 && random() < 0.5) {
+    if (w > 260 && random() < (L.oc || 0.5)) {
       const ox = x + w * (0.45 + random() * 0.35);
       ob(sc, ox, top, L.ob);
       ban(sc, ox, top - 110);
