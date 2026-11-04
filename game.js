@@ -5,6 +5,7 @@ const { sin, cos, max, min, abs, random, sqrt, ceil, floor, PI, round } = Math;
 
 const W = 800;
 const H = 600;
+const WHITE = '#fff';
 const CAM_X = 250; // Canelita's screen x
 const STORAGE_KEY = 'canelita-v2'; // v1 held point scores, not comparable to banana counts
 const MAX_HIGH_SCORES = 5;
@@ -61,14 +62,14 @@ const LEVELS = [
 ];
 
 // ---------- Music (transcribed from the stems in music/, see music/song.mid) ----------
-// One char per 16th note: MIDI note + 8 as a char ('0' = E2, 'X' = G#5), '-' holds the previous note (a letter after '-' makes it a run of holds: '-a' = 2, '-c' = 4), '.' is silence; drums: k kick, s snare, x hat.
+// One char per 16th note: MIDI note + 8 as a char ('0' = E2, 'X' = G#5), '-' holds the previous note (a letter after '-' makes it a run of holds: '-a' = 2, '-c' = 4), '.' is silence ('_' + letter is a run of silence, like '-'); drums: k kick, s snare, x hat.
 const SONG = {
   // ref: 7.862s @110bpm
   bpm: 110,
   t: [
-    ['square', 0.2, 'TTVXX.T-cTQQO-gV.XX.VT-bVVX-.T-T-bQQO-eJ-SQJJ.HH-HTVVXX.T-T-bQQO-eO-V.X-aVT-bVVXX.T-T-bQQO-eJ..QOO.HHH-a....S-T-QQO-aT-TT-VV..V.TVVQQT-b..OO-SOLJJMMJJED.....V.TVVQST-b...TQSTJJLLH.........V.TVVQST-b...OOMITV.VO.L.MHOO..X..X-aVUUTTVXX.T-T-aTQQO-gV.X-aVT-bVVXX.T-T-bQQO-eJJSQJJ.HH-H..VX-.T-T-aTQQO-eO-V.X-.VTT-aVVX-.T-T-bQQO-dOJ..Q-O.HH-c....T-T-bQQO-gV.XX-VT-gT-T-aTQQO-eJ-TQJJ.HH-H..VX-.T-T-aTQQO-gV.X-aVT-aT-dT-T-bQQO-eJ..QOO.HH-b...................................................................................................................................'],
-    ['triangle', 0.2, '.......<-e5-g7-a;-a<-h<-e>-g7-a;-a<-h<-e5-g7-a;-a<-h<-e>-g7-a;-a<-h<<-d5-g7-a;-a<-h<-e>-c>-b7-a;-a<-h<-e5-g7-a;-a<-h<-e>-g7-..............<-e5-g7-a;-a<-h<-e>-g7-a;-a<-h<-e5-g7-a;-a<-h<-e>-g7-a;-a<-f..................7-a;-a<-h<-e>-g7-a;-a<-h<-e5-g7-a;-a<-h................................<-d<5-c5-b7-a;-a<-b<-<-<<<-d<>-e>-7-7;-a<-d<-b<-d<5-g7-a;-a<-b<-<-<-<-d<>-e>>7-7;;;<-e'],
-    ['noise', 0.2, '.......k...s..s...ks..kkx.ss.k.xxxxs..x.xxxs.xsx.xks.kxkx.xs.s.xksxs..x.xxxs.xk..kxs..x.x.ss....kxks.xk.xxks.xkx.kxs...sx.ss.k.xxsxs...s......k....k...k..ss.k.x.x.s...s.x.s.ksx.k.s...s.xss.k.x.s.s.k.s.x.s.xsx.k.s.k.k.xss.k.x.k.s.k.k.x.s.xsx.k.s.x.k...............k......k....k.k.k..ks.k.xxxxs..x.xxxs.xk..kks.kxsx.ks.k..xsxs.x.sxxks.xsx.kxs.k.sx.sskk.xxkks.xksxxxsk.sx.kxs.kxsx.ss.k.xxsxs...k......k........k.....k.xxxxs.xxsxxxs..sx.kxs.kk.x.ss.s.xxsxs.kx.xxxs.ksx.xxs..xkx.ss.k.xxxks...................................k...k..k....k......ks.k..kxxs.xx.xxks.xkx.xxs.xxkx.ss.k.xksxs.xx.xxxs.xkx.xxs.xxkx.ss.k.xxxxs.xxkxxxs.xkx.xxs.xxkx.ss.k.xxsxs'],
+    ['square', 0.2, 'TTVXX.T-cTQQO-gV.XX.VT-bVVX-.T-T-bQQO-eJ-SQJJ.HH-HTVVXX.T-T-bQQO-eO-V.X-aVT-bVVXX.T-T-bQQO-eJ..QOO.HHH-a_cS-T-QQO-aT-TT-VV..V.TVVQQT-b..OO-SOLJJMMJJED_dV.TVVQST-b_bTQSTJJLLH_hV.TVVQST-b_bOOMITV.VO.L.MHOO..X..X-aVUUTTVXX.T-T-aTQQO-gV.X-aVT-bVVXX.T-T-bQQO-eJJSQJJ.HH-H..VX-.T-T-aTQQO-eO-V.X-.VTT-aVVX-.T-T-bQQO-dOJ..Q-O.HH-c_cT-T-bQQO-gV.XX-VT-gT-T-aTQQO-eJ-TQJJ.HH-H..VX-.T-T-aTQQO-gV.X-aVT-aT-dT-T-bQQO-eJ..QOO.HH-b_z_z_z_z_v'],
+    ['triangle', 0.2, '_f<-e5-g7-a;-a<-h<-e>-g7-a;-a<-h<-e5-g7-a;-a<-h<-e>-g7-a;-a<-h<<-d5-g7-a;-a<-h<-e>-c>-b7-a;-a<-h<-e5-g7-a;-a<-h<-e>-g7-_m<-e5-g7-a;-a<-h<-e>-g7-a;-a<-h<-e5-g7-a;-a<-h<-e>-g7-a;-a<-f_q7-a;-a<-h<-e>-g7-a;-a<-h<-e5-g7-a;-a<-h_z_d<-d<5-c5-b7-a;-a<-b<-<-<<<-d<>-e>-7-7;-a<-d<-b<-d<5-g7-a;-a<-b<-<-<-<-d<>-e>>7-7;;;<-e'],
+    ['noise', 0.2, '_fk_bs..s_bks..kkx.ss.k.xxxxs..x.xxxs.xsx.xks.kxkx.xs.s.xksxs..x.xxxs.xk..kxs..x.x.ss_ckxks.xk.xxks.xkx.kxs_bsx.ss.k.xxsxs_bs_ek_ck_bk..ss.k.x.x.s_bs.x.s.ksx.k.s_bs.xss.k.x.s.s.k.s.x.s.xsx.k.s.k.k.xss.k.x.k.s.k.k.x.s.xsx.k.s.x.k_nk_ek_ck.k.k..ks.k.xxxxs..x.xxxs.xk..kks.kxsx.ks.k..xsxs.x.sxxks.xsx.kxs.k.sx.sskk.xxkks.xksxxxsk.sx.kxs.kxsx.ss.k.xxsxs_bk_ek_gk_dk.xxxxs.xxsxxxs..sx.kxs.kk.x.ss.s.xxsxs.kx.xxxs.ksx.xxs..xkx.ss.k.xxxks_z_gk_bk..k_ck_eks.k..kxxs.xx.xxks.xkx.xxs.xxkx.ss.k.xksxs.xx.xxxs.xkx.xxs.xxkx.ss.k.xxxxs.xxkxxxs.xkx.xxs.xxkx.ss.k.xxsxs'],
   ],
 };
 
@@ -87,7 +88,7 @@ const SFX = {
 };
 
 // ---------- Pixel sprites (one char per pixel, see PAL) ----------
-const PAL = { k: '#2a1608', b: '#8a5630', d: '#5a3418', c: '#ead2a8', w: '#fff', e: '#111', p: '#f2a0b4', y: '#ffd83a', o: '#9a6a00', g: '#8a8a90', l: '#c8c8d0', m: '#5a5a62', a: '#9fdcff', n: '#c98a58', z: '#f6e3c8', r: '#f08a24', s: '#c0581a', v: '#5cc23a', t: '#2e7a22' };
+const PAL = { k: '#2a1608', b: '#8a5630', d: '#5a3418', c: '#ead2a8', w: WHITE, e: '#111', p: '#f2a0b4', y: '#ffd83a', o: '#9a6a00', g: '#8a8a90', l: '#c8c8d0', m: '#5a5a62', a: '#9fdcff', n: '#c98a58', z: '#f6e3c8', r: '#f08a24', s: '#c0581a', v: '#5cc23a', t: '#2e7a22' };
 // Canelita, 26×17 grid at scale 3 (78×51 px). Parts are ellipse lobes [x, y, rx, ry, PAL colour]; texBunny paints
 // all outlines first and fills after, so only the outer silhouette gets a dark line.
 const BUNNY = [
@@ -106,13 +107,13 @@ const LEGS = [
 // near ear with a pink inside, far ear darker and peeking behind it.
 const BUN_EAR = ['..kk.....', '.kdpk.kk.', '..kdpkddk', '...kdpkdk', '....kddk.'];
 const RUN_CYCLE = [0, 2, 1, 2];
-const BANANA = ['.......oo.', '.......oyo', '......oyyo', '......oyyo', '.....oyyyo', '....oyyyyo', '..ooyyyyo.', '.oyyyyyyo.', 'oyyyyyoo..', '.ooooo....'];
-const CARROT = ['......v..v', '.....vtvvt', '......vtt.', '....kkkv..', '...krrrk..', '..krrsrk..', '..krrrrk..', '.krsrrk...', '.krrrk....', 'krrsk.....', 'krk.......', 'kk........'];
+const BANANA = '.......oo. .......oyo ......oyyo ......oyyo .....oyyyo ....oyyyyo ..ooyyyyo. .oyyyyyyo. oyyyyyoo.. .ooooo....';
+const CARROT = '......v..v .....vtvvt ......vtt. ....kkkv.. ...krrrk.. ..krrsrk.. ..krrrrk.. .krsrrk... .krrrk.... krrsk..... krk....... kk........';
 const OBSTACLES = {
-  ob0: ['.kkkkkkkk.', 'kppppppppk', 'kpwwppwwpk', 'kppppppppk', 'kppwppwppk', 'kppppppppk', '.kkkkkkkk.'],
-  ob1: ['...kkkkk...', '..kllgggk..', '.klggggggk.', 'kgggggggmmk', 'kggggggmmmk', 'kgggggmmmmk', '.kkkkkkkkk.'],
-  ob2: ['kkkkkkkkkk', 'kllllllllk', 'klmmmmmmlk', 'klmgggmllk', 'klmgmgmllk', 'klmgggmllk', 'klmmmmmmlk', 'kllllllllk', 'kkkkkkkkkk'],
-  gl: ['.aa.', 'aawa', 'aaaa', '.aaa', '.aa.', '..a.'],
+  ob0: '.kkkkkkkk. kppppppppk kpwwppwwpk kppppppppk kppwppwppk kppppppppk .kkkkkkkk.',
+  ob1: '...kkkkk... ..kllgggk.. .klggggggk. kgggggggmmk kggggggmmmk kgggggmmmmk .kkkkkkkkk.',
+  ob2: 'kkkkkkkkkk kllllllllk klmmmmmmlk klmgggmllk klmgmgmllk klmgggmllk klmmmmmmlk kllllllllk kkkkkkkkkk',
+  gl: '.aa. aawa aaaa .aaa .aa. ..a.',
 };
 
 const config = {
@@ -832,7 +833,7 @@ function startMusic(sc) {
     out.connect(ctx.destination);
     const noise = ctx.createBuffer(1, ctx.sampleRate * 0.15, ctx.sampleRate);
     noise.getChannelData(0).forEach((_, i, a) => (a[i] = random() * 2 - 1));
-    const tracks = SONG.t.map(([w, v, n]) => ({ w, v, n: [...n.replace(/-([a-z])/g, (_, c) => '-'.repeat(c.charCodeAt() - 95))] }));
+    const tracks = SONG.t.map(([w, v, n]) => ({ w, v, n: [...n.replace(/([-_])([a-z])/g, (_, d, c) => (d > '-' ? '.' : '-').repeat(c.charCodeAt() - 95))] }));
     const dur = 60 / SONG.bpm / 4;
     let step = 0;
     let t = ctx.currentTime + 0.1;
@@ -925,6 +926,7 @@ function el(col, cx, cy, rx, ry) {
 }
 
 function px(sc, key, rows, s = 3, P = PAL) {
+  if (rows.split) rows = rows.split(' '); // sprites are written as space-separated rows
   cv(sc, key, rows[0].length * s, rows.length * s, (c) =>
     rows.forEach((r, y) => [...r].forEach((ch, x) => P[ch] && F(P[ch], x * s, y * s, s, s))),
   );
@@ -950,11 +952,13 @@ function mtn(c, col, snow, base, amp, n) {
 
 // Finale portrait: half grid (16 cols, mirrored to 32), one cell = 2×2 art px; '.' is empty and every empty cell
 // touching the silhouette becomes outline. Base frame has closed mouth and no pupils; texFinale stamps the rest.
-const FACE = ['........zzz.....', '.......nrRzb....', '.......nrRzb....', '.......nrRzb....', '.......nrRzb....', '.......nrRzb....', '........nrRzb...', '........nrRzb...', '........nrRzb...', '........nrRzb...', '........nrRzb...', '........nssbbnnn', '........nssbbbnn', '.......nbbbbbbbb', '......nzzzbbbbbb', '......nbbbbbbbbb', '......nbbbbbbbbb', '......nbbbbbbbbb', '......nbbbbbbbbb', '.....nbRRRbbbbbb', '.....nbbbbbbbbnn', '.....nbbbbzzzppp', '.....nbbbzzzzzpm', '.....nbbzzzzmzzm', '.....nbzzzzzzmmm', '......nbzzzzzzzz', '.......nbzzzzzzz', '........sbzzzzzz', '........ssssssss', '.......nbbbbbbbb', '......nbbbbbbbbb', '.....nbsbbbbzzzz', '.....nbbsbbbzzzz', '.....nbbsbbzzzzz', '.....nbbbsbzzzzz', '....nbbbbsbzzzzz', '....nbbbbsbzzzzz', '....nbbbbsbzzzzz', '....nbbbbbbzzzzz', '....nbbbbbbzzzzz', '....nbbbbbbzzzzz', '....nbbbbbbzzzzz', '....nbbbbbbzzzzz'];
-const FP = { k: '#2a1608', s: '#704424', b: '#8a5630', n: '#c98a58', z: '#ead2a8', r: '#e8a0a0', R: '#a85a4a', p: '#f2a0b4', e: '#111', w: '#fff', m: '#3a1608', t: '#fffaf0' };
+// Rows split on spaces; a leading digit repeats that row.
+const FACE = '........zzz..... 5.......nrRzb.... 5........nrRzb... ........nssbbnnn ........nssbbbnn .......nbbbbbbbb ......nzzzbbbbbb 4......nbbbbbbbbb .....nbRRRbbbbbb .....nbbbbbbbbnn .....nbbbbzzzppp .....nbbbzzzzzpm .....nbbzzzzmzzm .....nbzzzzzzmmm ......nbzzzzzzzz .......nbzzzzzzz ........sbzzzzzz ........ssssssss .......nbbbbbbbb ......nbbbbbbbbb .....nbsbbbbzzzz .....nbbsbbbzzzz .....nbbsbbzzzzz .....nbbbsbzzzzz 3....nbbbbsbzzzzz 5....nbbbbbbzzzzz'.split(' ').flatMap((r) => Array(+r[0] || 1).fill(r.replace(/^\d/, '')));
+const FP = { k: '#2a1608', s: '#704424', b: '#8a5630', n: '#c98a58', z: '#ead2a8', r: '#e8a0a0', R: '#a85a4a', p: '#f2a0b4', e: '#111', w: WHITE, m: '#3a1608', t: '#fffaf0' };
 
 // Draws a mirrored ('.' empty) or full cell grid at 2px per cell, outlining the silhouette.
 function cells(sc, key, rows, mirror) {
+  if (rows.split) rows = rows.split(' ');
   const g = rows.map((r) => (mirror ? [...r, ...[...r].reverse()] : [...r]));
   cv(sc, key, g[0].length * 2, g.length * 2, (c) =>
     g.forEach((r, y) => r.forEach((ch, x) => {
@@ -976,7 +980,7 @@ function makeTextures(sc) {
       for (let y = 2; y < 230; y += 8) F((y / 8) & 1 ? '#ffd83a' : '#8a5630', x + 2, y, 8, 8);
     });
     F('#2a1608', 0, 50, 220, 44);
-    for (let i = 0; i < 21; i++) for (let j = 0; j < 4; j++) F((i + j) & 1 ? '#111' : '#fff', 5 + i * 10, 52 + j * 10, 10, 10);
+    for (let i = 0; i < 21; i++) for (let j = 0; j < 4; j++) F((i + j) & 1 ? '#111' : WHITE, 5 + i * 10, 52 + j * 10, 10, 10);
     F('#2a1608', 28, 56, 164, 32);
     F('#ffd83a', 31, 59, 158, 26);
   });
@@ -1005,7 +1009,7 @@ function makeTextures(sc) {
     const x = rand(0, 540);
     junk.push([x, rand(top(x, 0) + 20, H), i % 3, rand(4, 12)]);
   }
-  [['mud', '#6b4423', '#8a5a30', '#d8c0a0', '#4a2e16', '#7a7a70'], ['tsu', '#1f6fb8', '#3f9ad8', '#fff', '#7fc8f0', '#cfeaf8']].forEach(([k, a, b, d, j1, j2]) =>
+  [['mud', '#6b4423', '#8a5a30', '#d8c0a0', '#4a2e16', '#7a7a70'], ['tsu', '#1f6fb8', '#3f9ad8', WHITE, '#7fc8f0', '#cfeaf8']].forEach(([k, a, b, d, j1, j2]) =>
     [0, 1].forEach((ph) =>
       cv(sc, k + ph, 600, H, () => {
         for (let x = 0; x < 600; x += 2) {
@@ -1024,10 +1028,10 @@ function makeTextures(sc) {
     F('#f3d6c6', 0, 0, W * 2, H);
     for (let x = 0; x < W * 2; x += 40) F('#ecc6b4', x, 0, 16, H);
     [0, W].forEach((o) => {
-      F('#fff', o + 90, 120, 180, 150);
+      F(WHITE, o + 90, 120, 180, 150);
       F('#9fd8ff', o + 100, 130, 160, 130);
-      F('#fff', o + 176, 130, 8, 130);
-      F('#fff', o + 100, 192, 160, 6);
+      F(WHITE, o + 176, 130, 8, 130);
+      F(WHITE, o + 100, 192, 160, 6);
       F('#7a4a28', o + 620, 270, 150, 8);
       for (let i = 0; i < 7; i++) F(['#e86a8a', '#6aa8e8', '#7fcf8a', '#f2c14e'][i % 4], o + 630 + i * 18, 232 + (i % 3) * 4, 14, 38 - (i % 3) * 4);
     });
@@ -1151,7 +1155,7 @@ function texTiles(sc) {
     F('#9ce46a', 0, 0, T, 1);
     for (let x = 0; x < T; x += 3) F('#9ce46a', x, random() * 3 | 0, 1, 2);
     for (let x = 0; x < T; x += 5) F('#3e8a2c', x + 2, 6 + (random() * 4 | 0), 1, 2);
-    for (let i = 0; i < 6; i++) F(['#fff', '#ffd86a', '#ff7aa0'][i % 3], rand(4, 120) | 0, 2 + (random() * 2 | 0), 2, 2);
+    for (let i = 0; i < 6; i++) F([WHITE, '#ffd86a', '#ff7aa0'][i % 3], rand(4, 120) | 0, 2 + (random() * 2 | 0), 2, 2);
   });
   // Costanera: concrete parapet and ledge, dusk facade with pilasters and lit/dark windows.
   cv(sc, 'tr', T, H, (c) => {
@@ -1177,7 +1181,7 @@ function texTiles(sc) {
 }
 
 // ===== Cerro San Cristóbal: b1a far (tiles), b1b near filler (tiles), sc1* landmarks (each shown once) =====
-// Tree at trunk base (x,y), size s. k: 0 round broadleaf (peumo/quillay), 1 araucaria, 2 cypress.
+// Tree at trunk base (x,y), size s. k: 1 araucaria, 2 cypress, 3 palma chilena.
 function tree(c, x, y, s, k) {
   const g = ['#1c4a26', '#2f7a3a', '#4f9a48', '#8ccc5a'], d = (n, a, b) => { for (let i = 0; i < n; i++) F(g[3], x + rand(a, b) * s, y - rand(a + 1.6, b + 1.9) * s, 2, 2); };
   if (k === 1) {
@@ -1199,14 +1203,18 @@ function tree(c, x, y, s, k) {
     el(g[1], x - s * 0.08, y - s * 1.7, s * 0.2, s * 1.3);
     d(4, -0.2, 0);
   } else {
-    F('#5a3a22', x - s * 0.12, y - s * 1.2, s * 0.24, s * 1.2);
-    F('#3e2814', x + s * 0.04, y - s * 1.2, s * 0.08, s * 1.2);
-    el(g[0], x, y - s * 1.5, s * 0.9, s * 0.7);
-    el(g[0], x - s * 0.6, y - s * 1.2, s * 0.5, s * 0.4);
-    el(g[0], x + s * 0.6, y - s * 1.2, s * 0.5, s * 0.4);
-    el(g[1], x - s * 0.15, y - s * 1.62, s * 0.66, s * 0.5);
-    el(g[2], x - s * 0.32, y - s * 1.8, s * 0.36, s * 0.26);
-    d(6, -0.6, 0.2);
+    const top = y - s * 2.2;
+    for (let j = 0; j < s * 2.2; j++) {
+      const w = s * (0.22 + 0.05 * sin((j / s) * 1.4));
+      F(j % 5 ? '#8a7a68' : '#5e5244', x - w, y - j, w * 2, 1);
+      F('#6e6050', x + w * 0.3, y - j, w * 0.7, 1);
+    }
+    // Fronds: arcs out from the crown, drooping under their own weight.
+    for (let a = 0; a < 9; a++) {
+      const t = PI * (1.08 + a * 0.105);
+      for (let j = 0; j < s * 1.2; j += 1.5) F(g[a % 3], x + cos(t) * j, top + sin(t) * j + (j * j) / (s * 1.6), 3, 2);
+    }
+    el('#5e5244', x, top + 2, s * 0.24, s * 0.14);
   }
 }
 
@@ -1227,7 +1235,7 @@ function texSanCristobal(sc) {
   // Far layer: sky, Andes, smog (tiles).
   cv(sc, 'b1a', W, H, (c) => {
     sky(c, 0x6ab8f0, 0xe0f4ff);
-    mtn(c, '#8a8fb0', '#fff', 300, 160, 7);
+    mtn(c, '#8a8fb0', WHITE, 300, 160, 7);
     mtn(c, '#6a7090', 0, 380, 90, 9);
     F('rgba(190,150,110,.25)', 0, 380, W, 140);
   });
@@ -1240,9 +1248,9 @@ function texSanCristobal(sc) {
       F('#c8a06a', x, TR(x) - 2, 1, 4);
       F('#8a6a40', x, TR(x) + 2, 1, 1);
     }
-    for (let i = 0; i < 18; i++) tree(c, rand(50, W - 50), rand(402, 414), rand(9, 13), [0, 0, 1, 2][i % 4]);
+    for (let i = 0; i < 18; i++) tree(c, rand(50, W - 50), rand(402, 414), rand(9, 13), [1, 2][i % 2]);
     mtn(c, '#4f8a3a', 0, 456, 30, 12);
-    for (let i = 0; i < 8; i++) tree(c, rand(50, W - 50), rand(458, 466), rand(13, 16), [0, 2, 1, 0][i % 4]);
+    for (let i = 0; i < 8; i++) tree(c, rand(50, W - 50), rand(458, 466), rand(13, 16), [3, 1][i % 2]);
     // Teleférico in front, tiling the whole stage: a lattice pylon every third of the tile and two shallow cables
     // (upper one goes forward, lower one back). The cabins are moving sprites, see cabs in play().
     for (const x of [W / 6, W / 2, W * 5 / 6]) {
@@ -1294,7 +1302,7 @@ function texSanCristobal(sc) {
       F(s, x - 9, y + 12, 18, 3);
       F(b, x - 10, y + 15, 20, 16);
       F('#d8ecff', x - 8, y + 17, 16, 7);
-      F('#fff', x - 8, y + 17, 3, 3);
+      F(WHITE, x - 8, y + 17, 3, 3);
       F(s, x - 1, y + 17, 2, 7);
       F(s, x + 6, y + 15, 4, 16);
       F(s, x - 10, y + 29, 20, 2);
@@ -1304,12 +1312,11 @@ function texSanCristobal(sc) {
   // 1. Virgen de la Inmaculada Concepción (after photos): head tilted up, ring of 12 stars, right arm out with open palm,
   // left forearm raised, long mantle draping from both arms, standing on a dome over a round pedestal and the sanctuary.
   cv(sc, 'sc1v', 260, H, (c) => {
-    const w0 = '#fff', w1 = '#dfe3ee', w2 = '#b0b8ca', gd = '#ffd83a';
+    const w0 = WHITE, w1 = '#dfe3ee', w2 = '#b0b8ca', gd = '#ffd83a';
     for (let y = 300; y < H; y++) F('#5f8f3a', 90 - (y - 300) * 0.6, y, 80 + (y - 300) * 1.2, 1);
     tree(c, 36, 470, 7, 1);
-    tree(c, 76, 396, 16, 2);
+    tree(c, 76, 396, 16, 3);
     tree(c, 188, 396, 12, 2);
-    tree(c, 226, 446, 16, 0);
     // Sanctuary terrace with arches.
     F('#e8e4da', 70, 278, 120, 30);
     F('#c8c2b4', 70, 302, 120, 6);
@@ -1440,7 +1447,7 @@ function texRapaNui(sc) {
     sky(c, 0x2f8ee0, 0xd8f2ff);
     for (let i = 0; i < 6; i++) {
       const x = rand(0, W), y = rand(70, 220), s = rand(0.6, 1.2);
-      [-W, 0, W].forEach((d) => [[0, 0, 60, 12], [-30, -8, 30, 12], [20, -12, 34, 14], [50, -2, 26, 9]].forEach(([a, b, rx, ry]) => el('#fff', x + d + a * s, y + b * s, rx * s, ry * s)));
+      [-W, 0, W].forEach((d) => [[0, 0, 60, 12], [-30, -8, 30, 12], [20, -12, 34, 14], [50, -2, 26, 9]].forEach(([a, b, rx, ry]) => el(WHITE, x + d + a * s, y + b * s, rx * s, ry * s)));
     }
     for (let y = 300; y < H; y += 4) F(mix(0x2a7ac8, 0x0c3e78, (y - 300) / 300), 0, y, W, 4);
     F('#a8d8f4', 0, 300, W, 2);
@@ -1468,7 +1475,7 @@ function texRapaNui(sc) {
     el('#3e6a2a', 238, 251, 94, 16);
     el('#2a5a6a', 238, 255, 80, 11);
     for (let i = 0; i < 26; i++) el(i % 3 ? '#7aa040' : '#a8b860', 238 + rand(-70, 70), 255 + rand(-7, 7), rand(3, 9), 2);
-    F('#fff', 450, 418, 10, 3);
+    F(WHITE, 450, 418, 10, 3);
   });
   // rn2: Ahu Tongariki, fifteen moai in a row on the island's largest ahu, one wearing its pukao (2nd from the right).
   cv(sc, 'rn2', 600, H, (c) => {
@@ -1492,7 +1499,7 @@ function texRapaNui(sc) {
     for (let x = 0; x < 128; x += 3) F('#a8e870', x, random() * 3 | 0, 1, 2);
   });
   // Obstacle: a little moai head poking out of the grass.
-  px(sc, 'obr', ['...kkkkkk...', '..kvvtvvvk..', '.kvvvvtvvvkk', 'kvvtvvvvtvvk', 'kmgvvgmmvgvk', 'kggmmggmggmk', 'kmggmmgvmgmk', 'kgmmggmmggmk', '.kkkkkkkkkk.']);
+  px(sc, 'obr', '...kkkkkk... ..kvvtvvvk.. .kvvvvtvvvkk kvvtvvvvtvvk kmgvvgmmvgvk kggmmggmggmk kmggmmgvmgmk kgmmggmmggmk .kkkkkkkkkk.');
 }
 
 // ===== Finale portrait: p0-p3 front-facing face+body, bn peeled banana, paw =====
@@ -1506,7 +1513,7 @@ function texFinale(sc) {
     else if (i & 1) st(12, 23, ['mmtt', 'mmRR']); // open mouth with buck teeth; the banana tip enters below
     cells(sc, 'p' + i, g.map((r) => r.join('')), 1);
   }
-  cells(sc, 'paw', ['.kkkk.', 'kbnnbk', 'kbbbbk', 'kbsbsk', '.kkkk.']);
+  cells(sc, 'paw', '.kkkk. kbnnbk kbbbbk kbsbsk .kkkk.');
   cv(sc, 'bn', 16, 32, (c) => {
     // Thick cream fruit with soft ridges; bites crop it flat from the top.
     F('#d8c890', 4, 0, 8, 18);
@@ -1593,7 +1600,7 @@ function cc2mut(c) {
   });
   // Buk sign on the centre block roof.
   F('#3150b4', 122, 172, 56, 28);
-  c.fillStyle = '#fff';
+  c.fillStyle = WHITE;
   c.font = 'bold 17px sans-serif';
   c.textAlign = 'center';
   c.fillText('·buk·', 150, 192);
@@ -1628,11 +1635,11 @@ function texVillarrica(sc) {
     cv(sc, 'vlb' + s, W, H, (c) => vlNear(c, e));
     cv(sc, 'vlv' + s, 800, H, (c) => vlCone(c, e));
   });
-  px(sc, 'vlo', ['..kkkk......', '.krrsrk.kkk.', 'krwrrwrkrrrk', 'kkkkkkkkrwrk', '..kck..kkkkk', '..kck...kck.', '..kck...kck.', '.kcck..kcck.', 'kddddddddddk', '.kkkkkkkkkk.']);
+  px(sc, 'vlo', '..kkkk...... .krrsrk.kkk. krwrrwrkrrrk kkkkkkkkrwrk ..kck..kkkkk ..kck...kck. ..kck...kck. .kcck..kcck. kddddddddddk .kkkkkkkkkk.');
   // Lava bomb falling down-left, flame trailing up-right.
-  px(sc, 'vle', ['.....r.y', '....ry..', '..rrr.r.', '.ryyrr..', 'ryyyyr..', 'ryywyr..', 'sryyrs..', '.sss....']);
-  cv(sc, 'vlsm', 16, 16, (c) => (el('rgba(255,255,255,.4)', 8, 8, 7, 7), el('rgba(255,255,255,.6)', 8, 8, 5, 5), el('#fff', 8, 8, 3, 3)));
-  cv(sc, 'vlsq', 3, 3, (c) => F('#fff', 0, 0, 3, 3));
+  px(sc, 'vle', '.....r.y ....ry.. ..rrr.r. .ryyrr.. ryyyyr.. ryywyr.. sryyrs.. .sss....');
+  cv(sc, 'vlsm', 16, 16, (c) => (el('rgba(255,255,255,.4)', 8, 8, 7, 7), el('rgba(255,255,255,.6)', 8, 8, 5, 5), el(WHITE, 8, 8, 3, 3)));
+  cv(sc, 'vlsq', 3, 3, (c) => F(WHITE, 0, 0, 3, 3));
   // Platform: basalt and scoria under a crust of grey ash, with a few tufts of coirón.
   cv(sc, 'vlt', 128, H, (c) => {
     F('#2c2832', 0, 0, 128, H);
@@ -1656,7 +1663,7 @@ function texVillarrica(sc) {
     win(118, 186, 284);
     win(118, 186, 308);
     for (const y of [342, 366, 390, 414]) win(18, 286, y);
-    F('#fff', 10, 330, 280, 2);
+    F(WHITE, 10, 330, 280, 2);
   });
   // 2: coihues, thick bare grey trunks under a broad crown of flat, layered clumps of small dark leaves.
   cv(sc, 'vlm2', 240, H, (c) => [[80, 170, 1], [175, 215, 0.8]].forEach(([x, top, s]) => {
@@ -1685,7 +1692,7 @@ function vlFar(c, e) {
   sky(c, e ? 0x1e0a14 : 0x4a9ee6, e ? 0xd0502a : 0xdcefff);
   for (let i = 0; i < (e ? 14 : 4); i++) {
     const x = (i * 197) % W, y = e ? 30 + ((i * 37) % 170) : 50 + i * 30, w = e ? 90 : 40 + i * 12;
-    [0, W, -W].forEach((o) => (e ? el('rgba(30,14,16,.5)', x + o, y, w, 22) : (el('#fff', x + o, y, w, 8), el('#fff', x + o + w * 0.3, y - 7, w * 0.45, 8))));
+    [0, W, -W].forEach((o) => (e ? el('rgba(30,14,16,.5)', x + o, y, w, 22) : (el(WHITE, x + o, y, w, 8), el(WHITE, x + o + w * 0.3, y - 7, w * 0.45, 8))));
   }
   vlRidge(c, e ? '#4a3040' : '#7d8cae', e ? '#c88a80' : '#eef3fb', 395, 90, 1);
   vlRidge(c, e ? '#2e1e28' : '#55687e', 0, 432, 40, 4);
@@ -1828,7 +1835,7 @@ function texAntartica(sc) {
   // Far layer: polar twilight with an aurora, stars, snowy ranges, a cold sea.
   cv(sc, 'an0a', W, H, (c) => {
     sky(c, 0x14204e, 0xf0d0e0);
-    for (let i = 0; i < 70; i++) F('#fff', rand(0, W), rand(0, 220), 1, 1);
+    for (let i = 0; i < 70; i++) F(WHITE, rand(0, W), rand(0, 220), 1, 1);
     // Aurora: a wavy green curtain with rays fading upward (whole sine periods so it tiles).
     for (let x = 0; x < W; x += 2) {
       const y = 150 + sin((x / W) * PI * 4) * 28 + sin((x / W) * PI * 6 + 1) * 14;
@@ -1837,12 +1844,12 @@ function texAntartica(sc) {
       F('rgba(200,255,225,.55)', x, y, 2, 2);
       F('rgba(255,90,200,.2)', x, y + 2, 2, 6);
     }
-    mtn(c, '#a4b8d4', '#fff', 330, 170, 6);
+    mtn(c, '#a4b8d4', WHITE, 330, 170, 6);
     mtn(c, '#dce8f4', 0, 384, 60, 9);
     F('#2c5a84', 0, 400, W, 200);
     // Navy icebreaker on the far sea: red hull tapering to the waterline, white bridge, ochre funnel, mast.
     for (let j = 0; j < 8; j++) F('#c8281e', 520 + j, 408 + j, 64 - j * 2, 1);
-    F('#fff', 536, 398, 26, 10);
+    F(WHITE, 536, 398, 26, 10);
     F('#2a3a4a', 538, 400, 22, 2);
     F('#d8a020', 552, 388, 6, 10);
     F('#111', 552, 386, 6, 2);
@@ -1855,7 +1862,7 @@ function texAntartica(sc) {
       const x = rand(0, W), w = rand(70, 170), h = rand(26, 70), y = 476 + rand(-4, 10);
       at(x, (p) => {
         // Tabular berg: flat snow top, sunlit face, shaded side, banded blue strata.
-        F('#fff', p, y - h, w, h);
+        F(WHITE, p, y - h, w, h);
         F('#cfe2f2', p + w * 0.68, y - h, w * 0.32, h);
         for (let j = y - h + 10; j < y; j += 9) F('rgba(90,150,210,.35)', p, j, w, 2);
         if (i & 1) for (let k = 0; k < 3; k++) anPeng(c, p + 12 + k * 9 + rand(0, 20), y - h, 1, 0);
@@ -1874,23 +1881,20 @@ function texAntartica(sc) {
     F('#a8c8e4', 0, 12, 128, 3);
     F('#eef6ff', 0, 0, 128, 13);
     for (let x = 0; x < 128; x += 16) el('#eef6ff', x + 8, 13, 7, 3); // snow lumps drooping over the edge
-    F('#fff', 0, 0, 128, 3);
+    F(WHITE, 0, 0, 128, 3);
   });
   // Ice block obstacle with a snow cap.
-  px(sc, 'oban', ['...kkkkkk...', '..kwwwwwwkk.', '.kwwwwsswwsk', 'kwsswwwssssk', 'kabbaaabbabk', 'kaabbaaaabdk', 'kbaaabbaabdk', 'kabaaaabbbdk', 'kbbabbbbbddk', '.kkkkkkkkkk.'], 3,
-    { k: '#1e3a5a', w: '#fff', s: '#dcebf8', a: '#a8d4f2', b: '#6aa8dc', d: '#3a78b8' });
+  px(sc, 'oban', '...kkkkkk... ..kwwwwwwkk. .kwwwwsswwsk kwsswwwssssk kabbaaabbabk kaabbaaaabdk kbaaabbaabdk kabaaaabbbdk kbbabbbbbddk .kkkkkkkkkk.', 3,
+    { k: '#1e3a5a', w: WHITE, s: '#dcebf8', a: '#a8d4f2', b: '#6aa8dc', d: '#3a78b8' });
   // Landmarks, in level order.
-  // 1. Base Presidente Eduardo Frei Montalva: red/orange modules, blue-roofed white blocks, a radome, a mast and the flag.
+  // 1. Base Presidente Eduardo Frei Montalva: red/orange modules, blue-roofed white blocks, a mast and the flag.
   cv(sc, 'anl1', 360, H, (c) => {
     for (let x = 0; x < 360; x++) F('#e8eef4', x, 380 - sin((x / 360) * PI) * 40, 1, H);
     for (let i = 0; i < 22; i++) F('#6a6460', rand(0, 360), rand(350, 420), rand(4, 14), 2);
     F('#c83020', 60, 120, 3, 240); // radio mast, red and white bands
-    for (let y = 120; y < 360; y += 24) F('#fff', 60, y, 3, 12);
+    for (let y = 120; y < 360; y += 24) F(WHITE, 60, y, 3, 12);
     ln(c, '#8a8a8a', 61, 130, 30, 352);
     ln(c, '#8a8a8a', 62, 130, 92, 352);
-    el('#fff', 290, 336, 34, 30); // radome
-    F('#c8d8e8', 300, 312, 2, 26);
-    F('#e8eef4', 256, 336, 70, 30);
     [[20, 344, 70, 22, '#e04a1e'], [100, 334, 90, 24, '#d8381a'], [120, 312, 50, 22, '#f07a20'], [200, 340, 60, 20, '#c83020'], [176, 356, 110, 18, '#e85a1e']].forEach(([x, y, w, h, col]) => {
       F(col, x, y, w, h);
       F('#7a1c10', x, y + h - 2, w, 2);
@@ -1915,9 +1919,9 @@ function texAntartica(sc) {
 // Standing penguin with feet at (x, y), scale s; emp = emperor (yellow neck patch, longer bill).
 function anPeng(c, x, y, s, emp) {
   el('#1c2028', x, y - 5 * s, 2.2 * s, 5 * s);
-  el('#fff', x + 0.6 * s, y - 4.4 * s, 1.4 * s, 4 * s);
+  el(WHITE, x + 0.6 * s, y - 4.4 * s, 1.4 * s, 4 * s);
   el('#1c2028', x, y - 10.5 * s, 1.6 * s, 1.6 * s);
-  F(emp ? '#f0b020' : '#fff', x + 0.4 * s, y - 9.5 * s, s, s * (emp ? 2 : 1));
+  F(emp ? '#f0b020' : WHITE, x + 0.4 * s, y - 9.5 * s, s, s * (emp ? 2 : 1));
   F(emp ? '#f08a40' : '#f0581a', x + 1.5 * s, y - 10.5 * s, s * (emp ? 1.5 : 1), max(1, s * 0.6));
   F('#f08a3a', x - s, y - 1, 2 * s, max(1, s * 0.6));
 }
@@ -1933,11 +1937,11 @@ function anHouse(c, x, y, w, h, wall, roof) {
 // Chilean flag on a pole (pole top at x, y).
 function anFlag(c, x, y) {
   F('#c8c8d0', x, y, 2, 100);
-  F('#fff', x + 2, y + 2, 36, 12);
+  F(WHITE, x + 2, y + 2, 36, 12);
   F('#d52b1e', x + 2, y + 14, 36, 12);
   F('#0039a6', x + 2, y + 2, 12, 12);
-  F('#fff', x + 7, y + 5, 2, 6);
-  F('#fff', x + 5, y + 7, 6, 2);
+  F(WHITE, x + 7, y + 5, 2, 6);
+  F(WHITE, x + 5, y + 7, 6, 2);
 }
 
 
