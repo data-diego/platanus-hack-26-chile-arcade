@@ -144,6 +144,7 @@ function create() {
     t: 0,
     hs: [],
     ne: { letters: [], i: 0, t: 0 },
+    pi: 0, // pause cursor: 0 resume, 1 quit
   };
 
   // Far layer depth -10, landmarks -9, near filler layer -8.
@@ -219,7 +220,6 @@ function update(time, delta) {
     if (d) pick(sc, (st.only + d + LEVELS.length) % LEVELS.length);
     if (consumeAnyPressedControl(sc, ['START1', 'P1_1'])) {
       playSound(sc, 'select');
-      startMusic(sc);
       newGame(sc);
     }
   } else if (ph === 'playing') {
@@ -227,7 +227,17 @@ function update(time, delta) {
     play(sc, time, delta);
     if (consumeAnyPressedControl(sc, ['START1'])) pause(sc, true);
   } else if (ph === 'paused') {
-    if (consumeAnyPressedControl(sc, ['START1'])) pause(sc, false);
+    if (consumeAnyPressedControl(sc, ['P1_U', 'P1_D'])) {
+      st.pi ^= 1;
+      pauseOpts(sc);
+    }
+    if (consumeAnyPressedControl(sc, ['START1', 'P1_1', 'P1_2'])) {
+      // Quit leaves physics paused; startLevel resumes it on the next run.
+      if (st.pi) {
+        sc.pauseScreen.setVisible(false);
+        returnToStart(sc);
+      } else pause(sc, false);
+    }
   } else if (ph === 'smash') {
     smash(sc, time);
   } else if (ph === 'clear') {
@@ -601,6 +611,8 @@ function die(sc, msg) {
 }
 
 function pause(sc, on) {
+  sc.state.pi = 0;
+  pauseOpts(sc);
   sc.pauseScreen.setVisible(on);
   if (on) sc.physics.pause();
   else sc.physics.resume();
@@ -737,9 +749,11 @@ function fmtTime(ms) {
 
 function createPause(sc) {
   const c = sc.add.container(0, 0).setDepth(40).setScrollFactor(0).setVisible(false);
-  c.add([sc.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.6), txt(sc, 400, 280, 'PAUSA', 52, '#ffd83a'), txt(sc, 400, 340, 'START PARA SEGUIR', 18)]);
+  c.add([sc.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.6), txt(sc, 400, 280, 'PAUSA', 52, '#ffd83a'), (sc.pauseOpt = txt(sc, 400, 360, '', 20))]);
   sc.pauseScreen = c;
 }
+
+const pauseOpts = (sc) => sc.pauseOpt.setText(['SEGUIR', 'SALIR AL MENÚ'].map((s, i) => (i === sc.state.pi ? `> ${s} <` : s)).join('\n'));
 
 function createStartScreen(sc) {
   const c = sc.add.container(0, 0).setDepth(25).setScrollFactor(0);
@@ -758,6 +772,8 @@ function createStartScreen(sc) {
 
 function showStart(sc) {
   setPhase(sc, 'start');
+  // Browsers keep the AudioContext suspended until the first key press; Phaser resumes it then.
+  startMusic(sc);
   refreshLeaderboard(sc);
   // Attract mode: a random level's scenery (backdrops, landmarks, teleféricos) scrolls behind the menu, with no level in it.
   [sc.plats, sc.bans, sc.obs, sc.debris, sc.junk].forEach((g) => g.clear(true, true));
