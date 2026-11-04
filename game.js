@@ -137,7 +137,7 @@ function create() {
   const sc = this;
   makeTextures(sc);
 
-  sc.state = {
+  sc.S = {
     phase: 'start',
     bananas: 0,
     lv: 0,
@@ -198,7 +198,7 @@ function create() {
 
   loadHighScores()
     .then((h) => {
-      sc.state.hs = h;
+      sc.S.hs = h;
       refreshLeaderboard(sc);
     })
     .catch(() => {});
@@ -206,7 +206,7 @@ function create() {
 
 function update(time, delta) {
   const sc = this;
-  const st = sc.state;
+  const st = sc.S;
   if (!st) return;
   st.t = time;
   const ph = st.phase;
@@ -255,23 +255,23 @@ function update(time, delta) {
 }
 
 function setPhase(sc, p) {
-  sc.state.phase = p;
+  sc.S.phase = p;
   sc.ctl.pressed = Object.create(null);
 }
 
 // ---------- Game flow ----------
 function newGame(sc) {
-  sc.state.ms = 0;
-  sc.state.bananas = 0;
-  sc.state.lives = 3;
+  sc.S.ms = 0;
+  sc.S.bananas = 0;
+  sc.S.lives = 3;
   showLives(sc);
   sc.menu.c.setVisible(false);
   sc.hud.c.setVisible(true);
-  startLevel(sc, sc.state.only);
+  startLevel(sc, sc.S.only);
 }
 
 function startLevel(sc, i) {
-  const st = sc.state;
+  const st = sc.S;
   const L = LEVELS[i];
   st.lv = i;
   st.L = L;
@@ -323,7 +323,7 @@ function scrollScenery(sc, L, t) {
 }
 
 function play(sc, t, dl) {
-  const st = sc.state;
+  const st = sc.S;
   const L = st.L;
   const pl = sc.pl;
   const b = pl.body;
@@ -428,7 +428,7 @@ function play(sc, t, dl) {
 }
 
 function gen(sc) {
-  const st = sc.state;
+  const st = sc.S;
   const L = st.L;
   const rnd = Phaser.Math.Between;
   while (!st.end && st.gx < sc.cameras.main.scrollX + W + 300) {
@@ -485,7 +485,7 @@ function buildBedroom(sc) {
     [3850, 'ABAJO / BOTÓN 5\n= CAER RÁPIDO'],
   ].forEach(([x, s]) => sc.junk.add(txt(sc, x, 200, s, 22)));
   goal(sc, 4500, 500);
-  sc.state.end = 1;
+  sc.S.end = 1;
 }
 
 function plat(sc, x, w, top, key, crack) {
@@ -498,9 +498,9 @@ function plat(sc, x, w, top, key, crack) {
 }
 
 function ban(sc, x, y) {
-  const car = sc.state.carX && x > sc.state.carX;
+  const car = sc.S.carX && x > sc.S.carX;
   const b = sc.bans.create(x, y, car ? 'car' : 'ban');
-  if (car) (b.car = 1), (sc.state.carX = 0);
+  if (car) (b.car = 1), (sc.S.carX = 0);
 }
 
 function ob(sc, x, top, key) {
@@ -508,7 +508,7 @@ function ob(sc, x, top, key) {
 }
 
 function goal(sc, x, top) {
-  sc.state.goalX = x;
+  sc.S.goalX = x;
   // Finish arch (220 wide) with a banana bobbing above the banner, and the banana hoard just past it.
   sc.junk.add(sc.add.image(x, top, 'arch').setOrigin(0.5, 1));
   sc.junk.add(sc.add.image(x + 250, top, 'hoard').setOrigin(0.5, 1));
@@ -520,7 +520,7 @@ function goal(sc, x, top) {
 }
 
 function land(sc, p) {
-  const st = sc.state;
+  const st = sc.S;
   // Cracked roofs only give way during an earthquake.
   if (!p.crack || p.fall || st.t > st.quakeEnd) return;
   p.fall = 1;
@@ -533,7 +533,7 @@ function land(sc, p) {
 }
 
 function grab(sc, b) {
-  const st = sc.state;
+  const st = sc.S;
   b.disableBody(true, true);
   if (b.car) {
     st.lives++;
@@ -550,7 +550,7 @@ function grab(sc, b) {
 }
 
 function hit(sc) {
-  const st = sc.state;
+  const st = sc.S;
   if (st.phase !== 'playing' || st.t < st.inv) return;
   st.inv = st.t + 1500;
   st.slow = st.t + 1000;
@@ -586,7 +586,7 @@ function squash(sc, x, y) {
 
 // Falling or getting caught by the aluvión/shoggoth costs a life and restarts the level.
 function lose(sc, msg) {
-  const st = sc.state;
+  const st = sc.S;
   st.lives--;
   showLives(sc);
   if (!st.lives) return die(sc, msg);
@@ -601,17 +601,17 @@ function lose(sc, msg) {
 }
 
 function die(sc, msg) {
-  if (sc.state.phase !== 'playing') return;
+  if (sc.S.phase !== 'playing') return;
   setPhase(sc, 'dead');
   sc.physics.pause();
   playSound(sc, 'fall');
   banner(sc, msg);
   // A single explored level is practice: no leaderboard entry.
-  sc.time.delayedCall(1900, () => (sc.state.only ? returnToStart(sc) : showNameEntry(sc, msg.replace('\n', ' '))));
+  sc.time.delayedCall(1900, () => (sc.S.only ? returnToStart(sc) : showNameEntry(sc, msg.replace('\n', ' '))));
 }
 
 function pause(sc, on) {
-  sc.state.pi = 0;
+  sc.S.pi = 0;
   pauseOpts(sc);
   sc.pauseScreen.setVisible(on);
   if (on) sc.physics.pause();
@@ -646,7 +646,7 @@ function createSmash(sc) {
 }
 
 function startSmash(sc) {
-  const st = sc.state;
+  const st = sc.S;
   const L = LEVELS[st.lv].bg; // the level that just ended
   setPhase(sc, 'smash');
   sc.physics.pause();
@@ -665,7 +665,7 @@ function startSmash(sc) {
 }
 
 function smash(sc, t) {
-  const st = sc.state;
+  const st = sc.S;
   const m = sc.sm;
   const left = max(0, st.smashEnd - t);
   m.time.setText((left / 1000).toFixed(1));
@@ -730,14 +730,14 @@ function createHud(sc) {
 
 // One carrot per life stacked left to right; the first 3 slots stay as dimmed outlines once lost.
 function showLives(sc) {
-  const n = sc.state.lives, l = sc.hud.lives;
+  const n = sc.S.lives, l = sc.hud.lives;
   while (l.length < max(3, n)) sc.hud.c.add(l[l.length] = sc.add.image(26 + l.length * 26, 66, 'car'));
   l.forEach((im, i) => im.setVisible(i < max(3, n)).setAlpha(i < n ? 1 : 0.25));
 }
 
 function refreshHud(sc, p) {
-  sc.hud.ban.setText('x ' + sc.state.bananas);
-  sc.hud.clock.setText(fmtTime(sc.state.ms));
+  sc.hud.ban.setText('x ' + sc.S.bananas);
+  sc.hud.clock.setText(fmtTime(sc.S.ms));
   sc.hud.bar.setScale(p, 1);
 }
 
@@ -753,7 +753,7 @@ function createPause(sc) {
   sc.pauseScreen = c;
 }
 
-const pauseOpts = (sc) => sc.pauseOpt.setText(['SEGUIR', 'SALIR AL MENÚ'].map((s, i) => (i === sc.state.pi ? `> ${s} <` : s)).join('\n'));
+const pauseOpts = (sc) => sc.pauseOpt.setText(['SEGUIR', 'SALIR AL MENÚ'].map((s, i) => (i === sc.S.pi ? `> ${s} <` : s)).join('\n'));
 
 function createStartScreen(sc) {
   const c = sc.add.container(0, 0).setDepth(25).setScrollFactor(0);
@@ -779,13 +779,13 @@ function showStart(sc) {
   [sc.plats, sc.bans, sc.obs, sc.debris, sc.junk].forEach((g) => g.clear(true, true));
   sc.vis.setVisible(false);
   sc.cameras.main.scrollX = 0;
-  pick(sc, sc.state.only || 0);
+  pick(sc, sc.S.only || 0);
   sc.menu.c.setVisible(true);
 }
 
 // Start-screen level picker: 0 = the full run, i > 0 = explore level i alone. The backdrop previews the choice.
 function pick(sc, i) {
-  sc.state.only = i;
+  sc.S.only = i;
   sc.menu.sel.setText(i ? `< NIVEL ${i}: ${LEVELS[i].n} >` : '< HISTORIA COMPLETA >');
   setScenery(sc, (sc.menu.L = i ? LEVELS[i] : Phaser.Utils.Array.GetRandom(LEVELS)));
 }
@@ -794,7 +794,7 @@ function returnToStart(sc) {
   sc.eg.c.setVisible(false);
   sc.hud.c.setVisible(false);
   sc.mud.setVisible(false);
-  sc.state.L = 0;
+  sc.S.L = 0;
   showStart(sc);
 }
 
@@ -814,7 +814,7 @@ function createEndGameUi(scene) {
 }
 
 function rejectName(sc) {
-  const m = sc.eg.mad, e = sc.state.ne;
+  const m = sc.eg.mad, e = sc.S.ne;
   playSound(sc, 'hit');
   sc.cameras.main.shake(250, 0.01);
   sc.tweens.killTweensOf(m);
@@ -826,7 +826,7 @@ function rejectName(sc) {
 }
 
 function showNameEntry(sc, msg) {
-  const st = sc.state;
+  const st = sc.S;
   setPhase(sc, 'gameover');
   sc.eg.c.setVisible(true);
   sc.eg.title.setText(msg);
@@ -839,8 +839,8 @@ function showNameEntry(sc, msg) {
 // ---------- Audio ----------
 function startMusic(sc) {
   const ctx = sc.sound.context;
-  if (sc.state.music || !ctx) return;
-  sc.state.music = 1;
+  if (sc.S.music || !ctx) return;
+  sc.S.music = 1;
   try {
     const out = ctx.createGain();
     out.gain.value = 0.6;
@@ -1791,7 +1791,7 @@ function vlCone(c, e) {
 function volcScenery(sc) {
   const add = (o, d, f = 0.02) => (sc.lms.add(o), o.setScrollFactor(f, 0).setDepth(d));
   const pe = (x, y, k, d, f, cfg) => add(sc.add.particles(x, y, k, cfg), d, f);
-  sc.state.vWarn = sc.state.vEr = 0;
+  sc.S.vWarn = sc.S.vEr = 0;
   sc.vo = {
     v: add(sc.add.image(VX, H, 'vlv').setOrigin(0.5, 1), -9.5),
     glow: add(sc.add.image(VX, VY, 'vlsm').setScale(9, 5).setTint(0xff6a20).setBlendMode('ADD').setVisible(false), -9.45),
@@ -1805,7 +1805,7 @@ function volcScenery(sc) {
 
 // Smoke, then rumbling (~33%), then the eruption (~42%): after it, burning ember chunks rain down in waves.
 function volcPlay(sc, t, p) {
-  const st = sc.state, o = sc.vo, cam = sc.cameras.main, rnd = Phaser.Math.Between;
+  const st = sc.S, o = sc.vo, cam = sc.cameras.main, rnd = Phaser.Math.Between;
   if (!st.vWarn && p > 0.33) {
     st.vWarn = 1;
     banner(sc, 'EL VOLCÁN\nRETUMBA...');
@@ -2038,7 +2038,7 @@ const menuAxis = (h, a, b) => (h['P1_' + b] || h['P2_' + b] ? 1 : 0) - (h['P1_' 
 
 // ---------- Initials entry: classic 3-slot slider ----------
 function handleNameEntry(sc, time) {
-  const e = sc.state.ne;
+  const e = sc.S.ne;
   const x = menuAxis(sc.ctl.held, 'L', 'R');
   const y = menuAxis(sc.ctl.held, 'U', 'D');
   if (!x && !y) e.t = 0; // release = next tap is instant; holding auto-repeats
@@ -2060,12 +2060,12 @@ function handleNameEntry(sc, time) {
 }
 
 function refreshNameEntry(sc) {
-  const e = sc.state.ne;
+  const e = sc.S.ne;
   sc.eg.nameValue.setText(e.letters.map((l, i) => (i === e.i ? `[${l}]` : ` ${l} `)).join(''));
 }
 
 function submitHighScore(scene) {
-  const st = scene.state;
+  const st = scene.S;
   if (st.phase !== 'gameover') return;
   const name = st.ne.letters.join('').slice(0, WINNING_NAME_LENGTH) || '???';
   const entry = { name, bananas: st.bananas, ms: round(st.ms), level: LEVELS[st.lv].n, savedAt: new Date().toISOString().slice(0, 10) };
@@ -2080,7 +2080,7 @@ function submitHighScore(scene) {
 }
 
 function refreshLeaderboard(scene) {
-  const h = scene.state.hs;
+  const h = scene.S.hs;
   const s = h.length
     ? h.map((e, i) => `${i + 1}. ${e.name.padEnd(3, ' ')} ${String(e.bananas).padStart(4, ' ')} ${fmtTime(e.ms).padStart(7, ' ')}  ${e.level}`).join('\n')
     : 'SIN RÉCORDS AÚN';
@@ -2109,20 +2109,13 @@ function isHighScoreEntry(v) {
   return v && typeof v === 'object' && typeof v.name === 'string' && typeof v.bananas === 'number' && typeof v.ms === 'number' && typeof v.level === 'string' && typeof v.savedAt === 'string';
 }
 
-function getStorage() {
-  if (window.platanusArcadeStorage) return window.platanusArcadeStorage;
-  return {
-    async get(key) {
-      try {
-        const raw = window.localStorage.getItem(key);
-        return raw === null ? { found: false, value: null } : { found: true, value: JSON.parse(raw) };
-      } catch {
-        return { found: false, value: null };
-      }
+// Dev fallback when the cabinet storage isn't injected; errors reject and are caught by the callers.
+const getStorage = () =>
+  window.platanusArcadeStorage || {
+    get: async (k) => {
+      const v = localStorage.getItem(k);
+      return { found: v !== null, value: JSON.parse(v) };
     },
-    async set(key, value) {
-      window.localStorage.setItem(key, JSON.stringify(value));
-    },
+    set: async (k, v) => localStorage.setItem(k, JSON.stringify(v)),
   };
-}
 })();
