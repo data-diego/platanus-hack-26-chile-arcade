@@ -9,6 +9,8 @@ const MAX_HIGH_SCORES = 5;
 const WINNING_NAME_LENGTH = 3;
 const COLORS = { accent: 0xffd83a, backdrop: 0x1a0e06 };
 const AZ = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+// Initials rejected by the angry Canelita (English + Chilean slang).
+const BAD = 'ASS FUK FUC FCK FUQ SEX CUM DIK DIC COK FAG NIG NGR KKK TIT XXX NAZ CTM CSM PTM CHT QLO CUL PIC PIK PTA PUT PNE VRG MRD HDP PEO'.split(' ');
 
 // DO NOT replace existing keys — they match the physical arcade cabinet wiring.
 // To add local testing shortcuts, append extra keys to any array.
@@ -733,6 +735,19 @@ function createEndGameUi(scene) {
   c.add([scene.endGame.title, scene.endGame.summary, txt(scene, 400, 168, 'TUS INICIALES', 13), scene.endGame.nameValue, scene.endGame.leaderboard, scene.endGame.saveStatus]);
 
   c.add(txt(scene, 400, 440, '▲▼ LETRA   ◀▶ MOVER   BOTÓN: OK', 14));
+  c.add((scene.endGame.mad = scene.add.image(400, 340, 'p4').setScale(3).setVisible(false)));
+}
+
+function rejectName(sc) {
+  const m = sc.endGame.mad, e = sc.state.nameEntry;
+  playSound(sc, 'hit');
+  sc.cameras.main.shake(250, 0.01);
+  sc.tweens.killTweensOf(m);
+  m.setVisible(true).setAngle(0);
+  sc.tweens.add({ targets: m, angle: { from: -6, to: 6 }, duration: 60, yoyo: true, repeat: 6, completeDelay: 900, onComplete: () => m.setVisible(false) });
+  sc.endGame.saveStatus.setText('¡ESE NOMBRE NO! ELIGE OTRO');
+  Object.assign(e, { letters: ['A', 'A', 'A'], i: 0 });
+  refreshNameEntry(sc);
 }
 
 function showNameEntry(sc, msg) {
@@ -1374,6 +1389,13 @@ function texFinale(sc) {
     if (i & 1) st(12, 23, ['mmtt', 'mmRR']); // open mouth with buck teeth; the banana tip enters below
     cells(sc, 'p' + i, g.map((r) => r.join('')), 1);
   }
+  // p4: angry front face, brows slanting down to the centre and a frown.
+  const g = FACE.map((r) => [...r]);
+  const st = (x, y, rows) => rows.forEach((r, j) => [...r].forEach((ch, k) => ch != ' ' && (g[y + j][x + k] = ch)));
+  st(7, 15, ['zwez', 'zeez', 'zeez', ' ee ']);
+  st(6, 13, ['kk', ' kkk', '   kkk']);
+  st(11, 22, ['zzzzm', 'zzmmm', 'zmzzz']);
+  cells(sc, 'p4', g.map((r) => r.join('')), 1);
   cells(sc, 'paw', ['.kkkk.', 'kbnnbk', 'kbbbbk', 'kbsbsk', '.kkkk.']);
   cv(sc, 'bn', 16, 32, (c) => {
     // Thick cream fruit with soft ridges; bites crop it flat from the top.
@@ -1615,7 +1637,8 @@ function handleNameEntry(sc, time) {
     if (e.i < WINNING_NAME_LENGTH - 1) {
       e.i++;
       refreshNameEntry(sc);
-    } else submitHighScore(sc);
+    } else if (BAD.includes(e.letters.join(''))) rejectName(sc);
+    else submitHighScore(sc);
   }
 }
 
