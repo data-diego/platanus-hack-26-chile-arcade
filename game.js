@@ -123,7 +123,7 @@ const config = {
   backgroundColor: '#1a0e06',
   pixelArt: true,
   // fixedStep off: a fixed 60Hz step stutters on 120Hz displays.
-  physics: { default: 'arcade', arcade: { gravity: { y: 1500 }, debug: false, fixedStep: false } },
+  physics: { default: 'arcade', arcade: { gravity: { y: 1500 }, fixedStep: false } },
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: W, height: H },
   scene: { preload, create, update },
 };
@@ -141,8 +141,8 @@ function create() {
     bananas: 0,
     lv: 0,
     t: 0,
-    highScores: [],
-    nameEntry: { letters: [], i: 0, t: 0 },
+    hs: [],
+    ne: { letters: [], i: 0, t: 0 },
   };
 
   // Far layer depth -10, landmarks -9, near filler layer -8.
@@ -196,7 +196,7 @@ function create() {
 
   loadHighScores()
     .then((h) => {
-      sc.state.highScores = h;
+      sc.state.hs = h;
       refreshLeaderboard(sc);
     })
     .catch(() => {});
@@ -210,7 +210,7 @@ function update(time, delta) {
   const ph = st.phase;
 
   if (ph === 'start') {
-    const L = sc.startScreen.L, cam = sc.cameras.main;
+    const L = sc.menu.L, cam = sc.cameras.main;
     // shortcut: wrapping at L.len makes the scenery pop once per ~50s loop.
     cam.scrollX = (cam.scrollX + delta * 0.3) % L.len;
     scrollScenery(sc, L, time);
@@ -245,7 +245,7 @@ function update(time, delta) {
 
 function setPhase(sc, p) {
   sc.state.phase = p;
-  sc.controls.pressed = Object.create(null);
+  sc.ctl.pressed = Object.create(null);
 }
 
 // ---------- Game flow ----------
@@ -254,7 +254,7 @@ function newGame(sc) {
   sc.state.bananas = 0;
   sc.state.lives = 3;
   showLives(sc);
-  sc.startScreen.c.setVisible(false);
+  sc.menu.c.setVisible(false);
   sc.hud.c.setVisible(true);
   startLevel(sc, sc.state.only);
 }
@@ -754,7 +754,7 @@ function createStartScreen(sc) {
   const list = txt(sc, 400, 440, '', 16).setOrigin(0.5, 0).setAlign('left');
   const sel = txt(sc, 400, 397, '', 16, '#ffd83a');
   c.add([title, bun, sc.add.image(450, 300, 'ban').setScale(2), press, txt(sc, 400, 420, 'LEADERBOARD', 16, '#ffd83a'), list, txt(sc, 400, 580, 'SALTO: B2/ARRIBA  CAER: B5/ABAJO  RÁPIDO: B3/DER  LENTO: B1/IZQ', 13), sel]);
-  sc.startScreen = { c, list, sel };
+  sc.menu = { c, list, sel };
 }
 
 function showStart(sc) {
@@ -765,18 +765,18 @@ function showStart(sc) {
   sc.vis.setVisible(false);
   sc.cameras.main.scrollX = 0;
   pick(sc, sc.state.only || 0);
-  sc.startScreen.c.setVisible(true);
+  sc.menu.c.setVisible(true);
 }
 
 // Start-screen level picker: 0 = the full run, i > 0 = explore level i alone. The backdrop previews the choice.
 function pick(sc, i) {
   sc.state.only = i;
-  sc.startScreen.sel.setText(i ? `< NIVEL ${i}: ${LEVELS[i].n} >` : '< HISTORIA COMPLETA >');
-  setScenery(sc, (sc.startScreen.L = i ? LEVELS[i] : Phaser.Utils.Array.GetRandom(LEVELS)));
+  sc.menu.sel.setText(i ? `< NIVEL ${i}: ${LEVELS[i].n} >` : '< HISTORIA COMPLETA >');
+  setScenery(sc, (sc.menu.L = i ? LEVELS[i] : Phaser.Utils.Array.GetRandom(LEVELS)));
 }
 
 function returnToStart(sc) {
-  sc.endGame.container.setVisible(false);
+  sc.eg.c.setVisible(false);
   sc.hud.c.setVisible(false);
   sc.mud.setVisible(false);
   sc.state.L = 0; // pending level timers (aluvión) check st.L and bail
@@ -785,27 +785,27 @@ function returnToStart(sc) {
 
 function createEndGameUi(scene) {
   const c = scene.add.container(0, 0).setDepth(35).setScrollFactor(0).setVisible(false);
-  scene.endGame = { container: c };
+  const E = (scene.eg = { c });
   c.add(scene.add.rectangle(W / 2, H / 2, W, H, COLORS.backdrop, 0.97));
-  scene.endGame.title = txt(scene, 400, 70, '', 30, '#ffd83a');
-  scene.endGame.summary = txt(scene, 400, 130, '', 22);
-  scene.endGame.nameValue = txt(scene, 400, 200, '', 36, '#f2a0b4');
-  scene.endGame.leaderboard = txt(scene, 400, 250, '', 14).setOrigin(0.5, 0).setAlign('left');
-  scene.endGame.saveStatus = txt(scene, 400, 580, '', 13, '#ffd83a');
-  c.add([scene.endGame.title, scene.endGame.summary, txt(scene, 400, 168, 'TUS INICIALES', 13), scene.endGame.nameValue, scene.endGame.leaderboard, scene.endGame.saveStatus]);
+  E.title = txt(scene, 400, 70, '', 30, '#ffd83a');
+  E.summary = txt(scene, 400, 130, '', 22);
+  E.nameValue = txt(scene, 400, 200, '', 36, '#f2a0b4');
+  E.lb = txt(scene, 400, 250, '', 14).setOrigin(0.5, 0).setAlign('left');
+  E.note = txt(scene, 400, 580, '', 13, '#ffd83a');
+  c.add([E.title, E.summary, txt(scene, 400, 168, 'TUS INICIALES', 13), E.nameValue, E.lb, E.note]);
 
   c.add(txt(scene, 400, 440, '▲▼ LETRA   ◀▶ MOVER   BOTÓN: OK', 14));
-  c.add((scene.endGame.mad = scene.add.image(400, 340, 'p4').setScale(3).setVisible(false)));
+  c.add((E.mad = scene.add.image(400, 340, 'p4').setScale(3).setVisible(false)));
 }
 
 function rejectName(sc) {
-  const m = sc.endGame.mad, e = sc.state.nameEntry;
+  const m = sc.eg.mad, e = sc.state.ne;
   playSound(sc, 'hit');
   sc.cameras.main.shake(250, 0.01);
   sc.tweens.killTweensOf(m);
   m.setVisible(true).setAngle(0);
   sc.tweens.add({ targets: m, angle: { from: -6, to: 6 }, duration: 60, yoyo: true, repeat: 6, completeDelay: 900, onComplete: () => m.setVisible(false) });
-  sc.endGame.saveStatus.setText('¡ESE NOMBRE NO! ELIGE OTRO');
+  sc.eg.note.setText('¡ESE NOMBRE NO! ELIGE OTRO');
   Object.assign(e, { letters: ['A', 'A', 'A'], i: 0 });
   refreshNameEntry(sc);
 }
@@ -813,11 +813,11 @@ function rejectName(sc) {
 function showNameEntry(sc, msg) {
   const st = sc.state;
   setPhase(sc, 'gameover');
-  sc.endGame.container.setVisible(true);
-  sc.endGame.title.setText(msg);
-  sc.endGame.summary.setText(`PLÁTANOS ${st.bananas}   TIEMPO ${fmtTime(st.ms)}\nNIVEL: ${LEVELS[st.lv].n}`);
-  sc.endGame.saveStatus.setText('');
-  Object.assign(st.nameEntry, { letters: ['A', 'A', 'A'], i: 0, t: 0 });
+  sc.eg.c.setVisible(true);
+  sc.eg.title.setText(msg);
+  sc.eg.summary.setText(`PLÁTANOS ${st.bananas}   TIEMPO ${fmtTime(st.ms)}\nNIVEL: ${LEVELS[st.lv].n}`);
+  sc.eg.note.setText('');
+  Object.assign(st.ne, { letters: ['A', 'A', 'A'], i: 0, t: 0 });
   refreshNameEntry(sc);
 }
 
@@ -1975,17 +1975,17 @@ const BUN_DETAIL = [
 
 // ---------- Controls (from the starter) ----------
 function createControls(scene) {
-  scene.controls = { held: Object.create(null), pressed: Object.create(null) };
+  scene.ctl = { held: Object.create(null), pressed: Object.create(null) };
 
   const onKeyDown = (event) => {
     const arcadeCode = KEYBOARD_TO_ARCADE[normalizeIncomingKey(event.key)];
     if (!arcadeCode) return;
-    if (!scene.controls.held[arcadeCode]) scene.controls.pressed[arcadeCode] = true;
-    scene.controls.held[arcadeCode] = true;
+    if (!scene.ctl.held[arcadeCode]) scene.ctl.pressed[arcadeCode] = true;
+    scene.ctl.held[arcadeCode] = true;
   };
   const onKeyUp = (event) => {
     const arcadeCode = KEYBOARD_TO_ARCADE[normalizeIncomingKey(event.key)];
-    if (arcadeCode) scene.controls.held[arcadeCode] = false;
+    if (arcadeCode) scene.ctl.held[arcadeCode] = false;
   };
 
   window.addEventListener('keydown', onKeyDown);
@@ -2001,13 +2001,13 @@ function normalizeIncomingKey(key) {
 }
 
 function isControlHeld(scene, controlCode) {
-  return scene.controls.held[controlCode] === true;
+  return scene.ctl.held[controlCode] === true;
 }
 
 function consumeAnyPressedControl(scene, controlCodes) {
   for (const controlCode of controlCodes) {
-    if (scene.controls.pressed[controlCode]) {
-      scene.controls.pressed[controlCode] = false;
+    if (scene.ctl.pressed[controlCode]) {
+      scene.ctl.pressed[controlCode] = false;
       return true;
     }
   }
@@ -2019,9 +2019,9 @@ const menuAxis = (h, a, b) => (h['P1_' + b] || h['P2_' + b] ? 1 : 0) - (h['P1_' 
 
 // ---------- Initials entry: classic 3-slot slider ----------
 function handleNameEntry(sc, time) {
-  const e = sc.state.nameEntry;
-  const x = menuAxis(sc.controls.held, 'L', 'R');
-  const y = menuAxis(sc.controls.held, 'U', 'D');
+  const e = sc.state.ne;
+  const x = menuAxis(sc.ctl.held, 'L', 'R');
+  const y = menuAxis(sc.ctl.held, 'U', 'D');
   if (!x && !y) e.t = 0; // release = next tap is instant; holding auto-repeats
   else if (time >= e.t) {
     e.t = time + 150;
@@ -2041,32 +2041,32 @@ function handleNameEntry(sc, time) {
 }
 
 function refreshNameEntry(sc) {
-  const e = sc.state.nameEntry;
-  sc.endGame.nameValue.setText(e.letters.map((l, i) => (i === e.i ? `[${l}]` : ` ${l} `)).join(''));
+  const e = sc.state.ne;
+  sc.eg.nameValue.setText(e.letters.map((l, i) => (i === e.i ? `[${l}]` : ` ${l} `)).join(''));
 }
 
 function submitHighScore(scene) {
   const st = scene.state;
   if (st.phase !== 'gameover') return;
-  const name = st.nameEntry.letters.join('').slice(0, WINNING_NAME_LENGTH) || '???';
+  const name = st.ne.letters.join('').slice(0, WINNING_NAME_LENGTH) || '???';
   const entry = { name, bananas: st.bananas, ms: round(st.ms), level: LEVELS[st.lv].n, savedAt: new Date().toISOString().slice(0, 10) };
   setPhase(scene, 'saved');
-  scene.endGame.saveStatus.setText(`¡GUARDADO, ${name}! PRESIONA START`);
+  scene.eg.note.setText(`¡GUARDADO, ${name}! PRESIONA START`);
   persistHighScore(entry)
     .then((h) => {
-      st.highScores = h;
+      st.hs = h;
       refreshLeaderboard(scene);
     })
-    .catch(() => scene.endGame.saveStatus.setText('NO SE PUDO GUARDAR. PRESIONA START'));
+    .catch(() => scene.eg.note.setText('NO SE PUDO GUARDAR. PRESIONA START'));
 }
 
 function refreshLeaderboard(scene) {
-  const h = scene.state.highScores;
+  const h = scene.state.hs;
   const s = h.length
     ? h.map((e, i) => `${i + 1}. ${e.name.padEnd(3, ' ')} ${String(e.bananas).padStart(4, ' ')} ${fmtTime(e.ms).padStart(7, ' ')}  ${e.level}`).join('\n')
     : 'SIN RÉCORDS AÚN';
-  scene.endGame.leaderboard.setText(s);
-  scene.startScreen.list.setText(s);
+  scene.eg.lb.setText(s);
+  scene.menu.list.setText(s);
 }
 
 // ---------- Storage (from the starter) ----------
