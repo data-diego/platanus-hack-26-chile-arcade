@@ -55,8 +55,8 @@ const LEVELS = [
   { n: 'DORMITORIO', bg: ['b0a'], f: [0.25], v: [240, 280], len: 4500 },
   { n: 'CERRO SAN CRISTÓBAL', bg: ['b1a', 'b1b'], v: [290, 390], len: 15000, lm: ['sc1v', 'sc1c'], tile: 'tg', ob: 'ob1', g: [70, 190], w: [260, 620], mud: 1, cab: 1 },
   { n: 'COSTANERA CENTER', bg: ['b2a', 'b2b'], v: [290, 380], len: 16000, lm: ['cco0', 'cco1'], tile: 'tr', ob: 'ob2', g: [70, 170], w: [280, 600], quake: 1, oc: 0.3 },
-  // tsu reskins the mud chaser as a tsunami.
-  { n: 'RAPA NUI', bg: ['rnA', 'rnB'], v: [340, 470], len: 17000, lm: ['rn0', 'rn2'], tile: 'trn', ob: 'obr', g: [100, 235], w: [190, 520], mud: 1, tsu: 1 },
+  // sho reskins the mud chaser as a shoggoth.
+  { n: 'SAN FRANCISCO', bg: ['sfA', 'sfB'], v: [340, 470], len: 17000, lm: ['sf0', 'sfL', 'sfZ'], tile: 'tr', ob: 'ob2', g: [100, 235], w: [190, 520], mud: 1, sho: 1 },
   { n: 'VILLARRICA', bg: ['vla', 'vlb'], v: [290, 380], len: 17500, lm: ['vlm0', 'vlm1', 'vlm2'], tile: 'vlt', ob: 'vlo', g: [70, 170], w: [280, 600], volc: 1 },
   { n: 'ANTÁRTICA', bg: ['an0a', 'an0b'], v: [380, 510], len: 18000, lm: ['anl1', 'anl2'], tile: 'tan', ob: 'oban', g: [105, 230], w: [180, 480] },
 ];
@@ -284,14 +284,6 @@ function startLevel(sc, i) {
   }
   sc.hud.name.setText(L.n);
   banner(sc, `NIVEL ${i}\n${L.n}`);
-  // The aluvión only shows up (sliding in from off-screen left) with its warning.
-  if (L.mud)
-    sc.time.delayedCall(1900, () => {
-      if (st.L !== L) return;
-      banner(sc, L.tsu ? '¡CUIDADO!\n¡VIENE EL TSUNAMI!' : '¡CUIDADO!\n¡VIENE EL ALUVIÓN!');
-      st.mud = CAM_X + 80;
-      sc.mud.setVisible(true);
-    });
   sc.physics.resume();
   setPhase(sc, 'playing');
 }
@@ -378,15 +370,21 @@ function play(sc, t, dl) {
   cam.scrollX = pl.x - CAM_X;
   scrollScenery(sc, L, t);
 
+  // The chaser only shows up a third of the way in, sliding in from off-screen left with its warning.
+  if (L.mud && !sc.mud.visible && pl.x > L.len / 3) {
+    banner(sc, L.sho ? '¡CUIDADO!\n¡VIENE EL SHOGGOTH!' : '¡CUIDADO!\n¡VIENE EL ALUVIÓN!');
+    st.mud = CAM_X + 80;
+    sc.mud.setVisible(true);
+  }
   if (L.mud && sc.mud.visible) {
     // The mud runs at 80% of the target speed: you outrun it unless you get slowed down or stuck.
     // st.mud = gap between the mud front (at ground height) and Canelita's back.
     // The cap eases down to 110 so the mud slides in on arrival.
     st.mud = min(max(110, st.mud - 300 * dt), st.mud + (pl.x - st.px) - tgt * 0.8 * dt);
-    sc.mud.setTexture((L.tsu ? 'tsu' : 'mud') + ((t / 140) & 1));
+    sc.mud.setTexture((L.sho ? 'sho' : 'mud') + ((t / 140) & 1));
     // Drawn 40px below the ground line so the wave does not tower over the whole screen.
     sc.mud.setPosition(CAM_X - 21 - st.mud + sin(t / 150) * 4, 510 + sin(t / 230) * 5);
-    if (st.mud <= 0) return lose(sc, L.tsu ? '¡TE ALCANZÓ\nEL TSUNAMI!' : '¡TE ALCANZÓ\nEL ALUVIÓN!');
+    if (st.mud <= 0) return lose(sc, L.sho ? '¡TE ALCANZÓ\nEL SHOGGOTH!' : '¡TE ALCANZÓ\nEL ALUVIÓN!');
   }
 
   if (L.quake) {
@@ -576,7 +574,7 @@ function squash(sc, x, y) {
   sc.tweens.add({ targets: sc.vis, scaleX: 1, scaleY: 1, duration: 140, ease: 'Quad.easeOut' });
 }
 
-// Falling or getting caught by the aluvión/tsunami costs a life and restarts the level.
+// Falling or getting caught by the aluvión/shoggoth costs a life and restarts the level.
 function lose(sc, msg) {
   const st = sc.state;
   st.lives--;
@@ -780,7 +778,7 @@ function returnToStart(sc) {
   sc.eg.c.setVisible(false);
   sc.hud.c.setVisible(false);
   sc.mud.setVisible(false);
-  sc.state.L = 0; // pending level timers (aluvión) check st.L and bail
+  sc.state.L = 0;
   showStart(sc);
 }
 
@@ -1002,16 +1000,22 @@ function makeTextures(sc) {
   });
   // Aluvión: a slanted wedge of mud, tall at the back, its toe sliding along the ground.
   // Two frames with shifted waves animate the surface; the same tumbling rocks/branches sit in both.
-  // The tsunami (Rapa Nui) is the same wedge in water colours, with foam flecks instead of debris.
+  // The shoggoth (San Francisco) is the same wedge in sickly green with spots, eyes and tentacles; its pupils dart between frames.
   const top = (x, ph) => (x > 560 ? 470 + (x - 560) * 3.2 : max(60, 470 - (560 - x) * 2 + sin(x / 23 + ph * 2) * 8));
   const junk = [];
   for (let i = 0; i < 50; i++) {
     const x = rand(0, 540);
     junk.push([x, rand(top(x, 0) + 20, H), i % 3, rand(4, 12)]);
   }
-  [['mud', '#6b4423', '#8a5a30', '#d8c0a0', '#4a2e16', '#7a7a70'], ['tsu', '#1f6fb8', '#3f9ad8', WHITE, '#7fc8f0', '#cfeaf8']].forEach(([k, a, b, d, j1, j2]) =>
+  [['mud', '#6b4423', '#8a5a30', '#d8c0a0', '#4a2e16', '#7a7a70'], ['sho', '#7f9a68', '#9ab482', '#1e2618', '#4e6040', '#c8d8b0']].forEach(([k, a, b, d, j1, j2]) =>
     [0, 1].forEach((ph) =>
       cv(sc, k + ph, 600, H, () => {
+        if (k > 'n')
+          [380, 450, 520].forEach((bx, n) =>
+            [d, a].forEach((col, o) => {
+              for (let s = 0; s < 1; s += 0.02) el(col, bx + s * 50 + sin(s * 6 + ph * 2 + n) * 12, top(bx, ph) - s * 90, 16 * (1 - s) + 4 - o * 3, 16 * (1 - s) + 4 - o * 3);
+            }),
+          );
         for (let x = 0; x < 600; x += 2) {
           const y = top(x, ph);
           F(a, x, y, 2, H - y);
@@ -1019,6 +1023,8 @@ function makeTextures(sc) {
           F(d, x, y, 2, 3);
         }
         junk.forEach(([x, y, i, w]) => F(i ? j1 : j2, x, y, w, 4));
+        // Eyes cluster in the front x 370-500, the only part on screen, so several always stare at Canelita.
+        if (k > 'n') [[380, 250], [415, 330], [455, 390], [480, 455], [415, 430], [370, 360], [450, 490], [500, 520], [390, 500]].forEach(([x, y]) => (el(d, x, y, 16, 11), el(WHITE, x, y, 13, 8), el(d, x - 5 + ph * 10, y, 5, 5)));
       }),
     ),
   );
@@ -1069,7 +1075,7 @@ function makeTextures(sc) {
   texTiles(sc);
   texSanCristobal(sc);
   texCostanera(sc);
-  texRapaNui(sc);
+  texSanFrancisco(sc);
   texVillarrica(sc);
   texAntartica(sc);
   texFinale(sc);
@@ -1407,99 +1413,103 @@ function texCostanera(sc) {
   cv(sc, 'cco1', 300, H, cc2mut);
 }
 
-// ===== Rapa Nui: rnA far (sky, Pacific, motus), rnB near (grassy hills), rn0/rn2 landmarks, trn tile, obr obstacle (the tsunami is drawn with the mud) =====
-// Moai seen from the front, standing on (x, y), h tall. k shears it (tilted), pk adds a red pukao.
-function rnMoai(c, x, y, h, k = 0, pk = 0) {
-  const [li, ba, sh, dk] = ['#8e8272', '#6e6458', '#544a40', '#2e2822'];
-  const w = h * 0.4;
-  for (let j = 0; j < h; j++) {
-    const t = j / h, yy = y - h + j, cx = x + k * (h - j);
-    const hw = t < 0.03 ? w * 0.3 : t < 0.52 ? w * 0.36 : t < 0.58 ? w * 0.32 : w * 0.4 + (t - 0.58) * w * 0.15;
-    const nw = w * (0.05 + max(0, t - 0.17) * 0.35), at = (a, b, col, x0, ww) => a <= t && t < b && (F(col, x0, yy, ww, 1), 1);
-    F(li, cx - hw, yy, hw * 0.5, 1);
-    F(ba, cx - hw * 0.5, yy, hw, 1);
-    F(sh, cx + hw * 0.5, yy, hw * 0.5, 1);
-    // Heavy brow over deep sockets, long nose, mouth, jutting chin.
-    at(0.12, 0.17, li, cx - hw, hw * 1.6);
-    if (at(0.17, 0.25, dk, cx - hw * 0.85, hw * 0.6)) F(dk, cx + hw * 0.25, yy, hw * 0.6, 1);
-    if (at(0.17, 0.4, li, cx - nw, nw)) F(sh, cx, yy, nw, 1);
-    at(0.4, 0.42, dk, cx - nw, nw * 2);
-    at(0.52, 0.58, sh, cx - hw, hw * 2);
-  }
-  if (pk) {
-    const px0 = x + k * h - w * 0.36, ph = h * 0.2;
-    F('#a8442a', px0, y - h - ph + 1, w * 0.72, ph);
-    F('#7a2e1a', px0 + w * 0.5, y - h - ph + 1, w * 0.22, ph);
-    F('#d0703e', px0, y - h - ph + 1, w * 0.72, 2);
-  }
-}
-
-// Ahu: stone platform of fitted blocks, top at y.
-function rnAhu(c, x0, x1, y) {
-  F('#5e5650', x0, y, x1 - x0, 32);
-  for (let r = 0; r < 3; r++) for (let x = x0 + (r & 1) * 9; x < x1; x += 18) F('#4a4440', x, y + 4 + r * 10, 1, 9), F('#4a4440', x0, y + 3 + r * 10, x1 - x0, 1);
-  F('#8e867a', x0, y, x1 - x0, 3);
-}
-
-function texRapaNui(sc) {
-  // Far: Pacific sky with trade-wind clouds, open ocean with whitecaps, the Motu Nui / Iti / Kao Kao islets off Rano Kau.
-  cv(sc, 'rnA', W, H, (c) => {
-    sky(c, 0x2f8ee0, 0xd8f2ff);
-    for (let i = 0; i < 6; i++) {
-      const x = rand(0, W), y = rand(70, 220), s = rand(0.6, 1.2);
-      [-W, 0, W].forEach((d) => [[0, 0, 60, 12], [-30, -8, 30, 12], [20, -12, 34, 14], [50, -2, 26, 9]].forEach(([a, b, rx, ry]) => el(WHITE, x + d + a * s, y + b * s, rx * s, ry * s)));
-    }
-    for (let y = 300; y < H; y += 4) F(mix(0x2a7ac8, 0x0c3e78, (y - 300) / 300), 0, y, W, 4);
-    F('#a8d8f4', 0, 300, W, 2);
-    for (let i = 0; i < 90; i++) {
-      const y = rand(306, H), x = rand(0, W - 12);
-      F('rgba(255,255,255,.7)', x, y, 3 + (y - 300) / 30, 1);
+// ===== San Francisco: sfA far (fog, Marin, bay), sfB near (city), sf0 Golden Gate, sfL Painted Ladies, sfZ Alcatraz =====
+function texSanFrancisco(sc) {
+  cv(sc, 'sfA', W, H, (c) => {
+    sky(c, 0x6fa0cc, 0xe4ecf0);
+    mtn(c, '#6a7a5a', 0, 330, 90, 5);
+    for (let y = 300; y < H; y += 4) F(mix(0x3a6a90, 0x1a3a58, (y - 300) / 300), 0, y, W, 4);
+    for (let i = 0; i < 90; i++) F('rgba(255,255,255,.6)', rand(0, W - 12), rand(306, H), 4, 1);
+    // Karl the fog rolling in over the headlands.
+    for (let i = 0; i < 14; i++) {
+      const x = rand(0, W), y = rand(250, 320), r = rand(40, 90);
+      [-W, 0, W].forEach((d) => el('rgba(240,244,248,.5)', x + d, y, r, r / 4));
     }
   });
-  // Near: rolling grassy volcanic hills with yellow grass tufts.
-  cv(sc, 'rnB', W, H, (c) => {
-    mtn(c, '#7aa84a', 0, 430, 60, 6);
-    for (let i = 0; i < 40; i++) F('#c8c060', rand(0, W), rand(434, 470), 2, 2);
-    mtn(c, '#5a8a34', 0, 476, 34, 10);
+  cv(sc, 'sfB', W, H, (c) => {
+    cc2city(c, 14, 120, 240, '#c8bca8', '#7a8ea8');
+    cc2city(c, 18, 50, 130, '#e8d0b8', '#5a6a80');
   });
-  // rn0: Rano Kau, the great caldera with its reed-flecked crater lake, sea cliffs on its seaward (right) flank.
-  cv(sc, 'rn0', 460, H, (c) => {
-    for (let x = 0; x < 460; x += 2) {
-      const y = x < 150 ? 250 + ((150 - x) / 150) ** 1.6 * 180 : x < 330 ? 250 + sin(x / 9) * 2 : 250 + ((x - 330) / 130) ** 0.8 * 170;
-      F(x < 330 ? '#6a9a3e' : '#5e8a36', x, y, 2, H - y);
-      F('#8aba5a', x, y, 2, 3);
-      if (x > 360) F('#7a5a3a', x, y + 10, 2, H - y), F('#5a4028', x, y + 10 + ((x * 7) % 30), 2, 4);
+  // sf0: Golden Gate Bridge, two art-deco towers in International Orange, catenary cables and the fog under the deck.
+  cv(sc, 'sf0', 640, H, (c) => {
+    const O = '#c0362c', D = '#7a2018', cab = (x) => (x < 170 ? 120 + ((170 - x) / 170) ** 0.8 * 280 : x > 470 ? 120 + ((x - 470) / 170) ** 0.8 * 280 : 385 - 265 * ((x - 320) / 150) ** 2);
+    F('#2a5a80', 0, 410, 640, H - 410);
+    for (let x = 0; x < 640; x += 2) {
+      const y = cab(x);
+      F(O, x, y, 2, 3);
+      if (x % 8 < 1) F(D, x, y, 1, 400 - y);
     }
-    for (let i = 0; i < 30; i++) F('#5a8a34', rand(20, 340), rand(300, 420), rand(6, 14), 2);
-    el('#8aba5a', 238, 250, 100, 20);
-    el('#3e6a2a', 238, 251, 94, 16);
-    el('#2a5a6a', 238, 255, 80, 11);
-    for (let i = 0; i < 26; i++) el(i % 3 ? '#7aa040' : '#a8b860', 238 + rand(-70, 70), 255 + rand(-7, 7), rand(3, 9), 2);
-    F(WHITE, 450, 418, 10, 3);
+    [170, 470].forEach((x) => {
+      F(O, x - 24, 110, 12, H - 110);
+      F(O, x + 12, 110, 12, H - 110);
+      F(D, x - 14, 110, 2, H - 110);
+      F(D, x + 22, 110, 2, H - 110);
+      [112, 170, 240, 320].forEach((y) => F(O, x - 24, y, 48, 12));
+    });
+    F(O, 0, 400, 640, 8);
+    F(D, 0, 408, 640, 6);
+    for (let x = 0; x < 640; x += 12) F(D, x, 400, 2, 14);
+    for (let i = 0; i < 9; i++) el('rgba(240,244,248,.6)', rand(0, 640), rand(420, 460), rand(50, 110), rand(8, 14));
   });
-  // rn2: Ahu Tongariki, fifteen moai in a row on the island's largest ahu, one wearing its pukao (2nd from the right).
-  cv(sc, 'rn2', 600, H, (c) => {
-    for (let x = 0; x < 600; x += 2) {
-      const y = 360 + max(0, abs(x - 300) - 250) * 1.2;
-      F('#6a9a3e', x, y, 2, H - y);
-      F('#8aba5a', x, y, 2, 2);
+  // sfZ: Alcatraz, a rocky island in the bay topped by the long white cellhouse, the lighthouse and the water tower.
+  cv(sc, 'sfZ', 520, H, (c) => {
+    // No water of its own: the island sits in the sfA bay behind it.
+    // Shrunk about the waterline and hazed (source-atop tints only the island) so it sits far out in the bay.
+    c.save();
+    c.translate(260 * 0.65, 370 - 430 * 0.35);
+    c.scale(0.35, 0.35);
+    for (let x = 20; x < 500; x += 2) {
+      const y = min(300 + max(0, abs(x - 260) - 130) ** 2 / 40, 430) + sin(x / 7) * 3;
+      F('#6e6050', x, y, 2, 434 - y);
+      F(x % 22 < 8 ? '#5a7a44' : '#8a7a64', x, y, 2, 4);
     }
-    rnAhu(c, 20, 580, 330);
-    [80, 86, 74, 90, 78, 84, 92, 96, 88, 82, 94, 80, 86, 78, 84].forEach((h, i) => rnMoai(c, 44 + i * 37, 331, h, 0, i == 13));
+    // Water tower on stilts.
+    F('#4a4440', 112, 250, 3, 80);
+    F('#4a4440', 139, 250, 3, 80);
+    F('#7a7068', 104, 222, 46, 30);
+    F('#9a9088', 104, 222, 46, 4);
+    // Barracks stepping down the slope.
+    F('#d8ccb0', 300, 318, 110, 34);
+    // Cellhouse: long white block, rows of tall barred windows, darker roof.
+    F('#e8e4d8', 160, 250, 200, 58);
+    F('#8a8478', 158, 244, 204, 6);
+    for (let x = 168; x < 354; x += 9) F('#3a3a42', x, 262, 4, 32);
+    F('#3a3a42', 160, 284, 200, 2);
+    // Lighthouse: tapering white tower with a dark lantern room.
+    for (let y = 160; y < 300; y++) F('#f4f2ea', 380 - (y - 130) / 12, y, ((y - 130) / 12) * 2, 1);
+    F('#2a2a30', 371, 148, 18, 14);
+    F('#ffd86a', 375, 151, 10, 8);
+    F('#2a2a30', 368, 160, 24, 3);
+    c.restore();
+    c.globalCompositeOperation = 'source-atop';
+    F('rgba(150,180,210,.55)', 0, 0, 520, 370);
+    c.globalCompositeOperation = 'source-over';
+    // Sign on the barracks, drawn after the haze so it stays legible.
+    F('#e8e0c8', 271, 330, 46, 12);
+    c.fillStyle = '#2a2a30';
+    c.font = 'bold 8px monospace';
+    c.textAlign = 'center';
+    c.fillText('ALCATRAZ', 294, 339);
+    for (let i = 0; i < 6; i++) el('rgba(240,244,248,.55)', rand(0, 520), rand(350, 390), rand(40, 90), rand(6, 10));
   });
-  // Tile: grass over red volcanic earth with strata and black basalt stones.
-  cv(sc, 'trn', 128, H, (c) => {
-    F('#8a4628', 0, 0, 128, H);
-    for (let y = 34; y < H; y += 30) F('#6a3220', 0, y, 128, 2);
-    for (let i = 0; i < 16; i++) el(random() < 0.5 ? '#2e2a28' : '#4a4440', rand(6, 122), rand(40, H - 8), 4, 3);
-    F('#5a9a34', 0, 0, 128, 12);
-    F('#3e7a2a', 0, 12, 128, 1);
-    F('#7ac84a', 0, 1, 128, 3);
-    F('#a8e870', 0, 0, 128, 1);
-    for (let x = 0; x < 128; x += 3) F('#a8e870', x, random() * 3 | 0, 1, 2);
+  // sfL: the Painted Ladies, pastel Victorians stepping down Steiner St behind the Alamo Square lawn.
+  cv(sc, 'sfL', 520, H, (c) => {
+    ['#e8a0b0', '#a8d0e0', '#f0e0a0', '#b8e0b0', '#d8b8e8', '#f0c098'].forEach((col, i) => {
+      const x = 10 + i * 84, g = 430 + i * 8, t = g - 160;
+      F(col, x, t, 80, H - t);
+      for (let j = 0; j < 40; j++) F('#5a4a5a', x + 40 - j, t - 40 + j, j * 2, 1);
+      F(WHITE, x, t, 80, 3);
+      F(WHITE, x, t + 75, 80, 3);
+      // Bay window on the left, two sash windows on the right, white door with stoop.
+      F(WHITE, x + 4, t + 14, 36, 130);
+      F(col, x + 6, t + 16, 32, 126);
+      [t + 22, t + 90].forEach((y) => [x + 9, x + 26, x + 50, x + 64].forEach((wx, k) => (k < 2 || y < t + 80) && (F(WHITE, wx, y, 12, 36), F('#3a4a6a', wx + 2, y + 2, 8, 32))));
+      F(WHITE, x + 50, t + 108, 20, 52);
+      F('#6a4a3a', x + 53, t + 111, 14, 49);
+      el(WHITE, x + 40, t - 18, 6, 6);
+    });
+    for (let x = 0; x < 520; x += 2) F(x & 2 ? '#5a9a3e' : '#4e8a36', x, 470 + x * 0.1, 2, H);
   });
-  // Obstacle: a little moai head poking out of the grass.
-  px(sc, 'obr', '...kkkkkk... ..kvvtvvvk.. .kvvvvtvvvkk kvvtvvvvtvvk kmgvvgmmvgvk kggmmggmggmk kmggmmgvmgmk kgmmggmmggmk .kkkkkkkkkk.');
 }
 
 // ===== Finale portrait: p0-p3 front-facing face+body, bn peeled banana, paw =====
