@@ -1414,6 +1414,7 @@ function texCostanera(sc) {
 }
 
 // ===== San Francisco: sfA far (fog, Marin, bay), sfB near (city), sf0 Golden Gate, sfL Painted Ladies, sfZ Alcatraz =====
+const FOG = 'rgba(240,244,248,.55)';
 function texSanFrancisco(sc) {
   cv(sc, 'sfA', W, H, (c) => {
     sky(c, 0x6fa0cc, 0xe4ecf0);
@@ -1423,35 +1424,29 @@ function texSanFrancisco(sc) {
     // Karl the fog rolling in over the headlands.
     for (let i = 0; i < 14; i++) {
       const x = rand(0, W), y = rand(250, 320), r = rand(40, 90);
-      [-W, 0, W].forEach((d) => el('rgba(240,244,248,.5)', x + d, y, r, r / 4));
+      [-W, 0, W].forEach((d) => el(FOG, x + d, y, r, r / 4));
     }
   });
-  cv(sc, 'sfB', W, H, (c) => {
-    cc2city(c, 14, 120, 240, '#c8bca8', '#7a8ea8');
-    cc2city(c, 18, 50, 130, '#e8d0b8', '#5a6a80');
-  });
+  cv(sc, 'sfB', W, H, (c) => (cc2city(c, 14, 120, 240, '#c8bca8', '#7a8ea8'), cc2city(c, 18, 50, 130, '#e8d0b8', '#5a6a80')));
   // sf0: Golden Gate Bridge, two art-deco towers in International Orange, catenary cables and the fog under the deck.
   cv(sc, 'sf0', 640, H, (c) => {
-    const O = '#c0362c', D = '#7a2018', cab = (x) => (x < 170 ? 120 + ((170 - x) / 170) ** 0.8 * 280 : x > 470 ? 120 + ((x - 470) / 170) ** 0.8 * 280 : 385 - 265 * ((x - 320) / 150) ** 2);
+    const O = '#c0362c', D = '#7a2018', cab = (x, d = abs(x - 320)) => (d > 150 ? 120 + ((d - 150) / 170) ** 0.8 * 280 : 385 - 265 * (d / 150) ** 2);
     F('#2a5a80', 0, 410, 640, H - 410);
+    F(O, 0, 400, 640, 8);
+    F(D, 0, 408, 640, 6);
     for (let x = 0; x < 640; x += 2) {
       const y = cab(x);
       F(O, x, y, 2, 3);
       if (x % 8 < 1) F(D, x, y, 1, 400 - y);
+      if (x % 12 < 1) F(D, x, 400, 2, 14);
     }
     [170, 470].forEach((x) => {
-      F(O, x - 24, 110, 12, H - 110);
-      F(O, x + 12, 110, 12, H - 110);
-      F(D, x - 14, 110, 2, H - 110);
-      F(D, x + 22, 110, 2, H - 110);
+      [x - 24, x + 12].forEach((l) => (F(O, l, 110, 12, H - 110), F(D, l + 10, 110, 2, H - 110)));
       [112, 170, 240, 320].forEach((y) => F(O, x - 24, y, 48, 12));
     });
-    F(O, 0, 400, 640, 8);
-    F(D, 0, 408, 640, 6);
-    for (let x = 0; x < 640; x += 12) F(D, x, 400, 2, 14);
-    for (let i = 0; i < 9; i++) el('rgba(240,244,248,.6)', rand(0, 640), rand(420, 460), rand(50, 110), rand(8, 14));
+    for (let i = 0; i < 9; i++) el(FOG, rand(0, 640), rand(420, 460), rand(50, 110), rand(8, 14));
   });
-  // sfZ: Alcatraz, a rocky island in the bay topped by the long white cellhouse, the lighthouse and the water tower.
+  // sfZ: Alcatraz, a rocky island in the bay topped by the long white cellhouse and the lighthouse.
   cv(sc, 'sfZ', 520, H, (c) => {
     // No water of its own: the island sits in the sfA bay behind it.
     // Shrunk about the waterline and hazed (source-atop tints only the island) so it sits far out in the bay.
@@ -1463,20 +1458,15 @@ function texSanFrancisco(sc) {
       F('#6e6050', x, y, 2, 434 - y);
       F(x % 22 < 8 ? '#5a7a44' : '#8a7a64', x, y, 2, 4);
     }
-    // Water tower on stilts.
-    F('#4a4440', 112, 250, 3, 80);
-    F('#4a4440', 139, 250, 3, 80);
-    F('#7a7068', 104, 222, 46, 30);
-    F('#9a9088', 104, 222, 46, 4);
     // Barracks stepping down the slope.
     F('#d8ccb0', 300, 318, 110, 34);
     // Cellhouse: long white block, rows of tall barred windows, darker roof.
-    F('#e8e4d8', 160, 250, 200, 58);
-    F('#8a8478', 158, 244, 204, 6);
-    for (let x = 168; x < 354; x += 9) F('#3a3a42', x, 262, 4, 32);
-    F('#3a3a42', 160, 284, 200, 2);
+    F('#e8e4d8', 130, 250, 200, 58);
+    F('#8a8478', 128, 244, 204, 6);
+    for (let x = 138; x < 324; x += 9) F('#3a3a42', x, 262, 4, 32);
+    F('#3a3a42', 130, 284, 200, 2);
     // Lighthouse: tapering white tower with a dark lantern room.
-    for (let y = 160; y < 300; y++) F('#f4f2ea', 380 - (y - 130) / 12, y, ((y - 130) / 12) * 2, 1);
+    for (let y = 160, w; y < 300; y++) F('#f4f2ea', 380 - (w = (y - 130) / 12), y, w * 2, 1);
     F('#2a2a30', 371, 148, 18, 14);
     F('#ffd86a', 375, 151, 10, 8);
     F('#2a2a30', 368, 160, 24, 3);
@@ -1488,9 +1478,8 @@ function texSanFrancisco(sc) {
     F('#e8e0c8', 271, 330, 46, 12);
     c.fillStyle = '#2a2a30';
     c.font = 'bold 8px monospace';
-    c.textAlign = 'center';
-    c.fillText('ALCATRAZ', 294, 339);
-    for (let i = 0; i < 6; i++) el('rgba(240,244,248,.55)', rand(0, 520), rand(350, 390), rand(40, 90), rand(6, 10));
+    c.fillText('ALCATRAZ', 275, 339);
+    for (let i = 0; i < 6; i++) el(FOG, rand(0, 520), rand(350, 390), rand(40, 90), rand(6, 10));
   });
   // sfL: the Painted Ladies, pastel Victorians stepping down Steiner St behind the Alamo Square lawn.
   cv(sc, 'sfL', 520, H, (c) => {
