@@ -262,6 +262,8 @@ function startLevel(sc, i) {
   sc.vis.setPosition(120, 380).setVisible(true).setAlpha(1).setAngle(0).setScale(1).clearTint();
   sc.cameras.main.scrollX = 0;
   Object.assign(st, { gx: 0, top: 470, end: 0, slow: 0, inv: 0, jumps: 0, coy: 0, px: 120, mud: 110, air: 0, quakeAt: st.t + 6000, quakeEnd: 0, dropAt: 0, speed: L.v[0] });
+  // From level 1 on, one banana mid-level is a disguised carrot (extra life).
+  st.carX = i ? L.len * (0.3 + Math.random() * 0.4) : 0;
   sc.mud.setVisible(false);
   if (i === 0) {
     buildBedroom(sc);
@@ -472,7 +474,8 @@ function plat(sc, x, w, top, key, crack) {
 }
 
 function ban(sc, x, y) {
-  sc.bans.create(x, y, 'ban');
+  const b = sc.bans.create(x, y, 'ban');
+  if (sc.state.carX && x > sc.state.carX) (b.car = 1), (sc.state.carX = 0);
 }
 
 function ob(sc, x, top, key) {
@@ -507,6 +510,14 @@ function land(sc, p) {
 function grab(sc, b) {
   const st = sc.state;
   b.disableBody(true, true);
+  if (b.car && st.lives < 3) {
+    // Reveal the carrot and restore a life.
+    sc.hud.lives[st.lives++].setAlpha(1);
+    const c = sc.add.image(b.x, b.y, 'car').setScale(2);
+    sc.tweens.add({ targets: c, y: c.y - 80, alpha: 0, duration: 900, onComplete: () => c.destroy() });
+    banner(sc, '¡ZANAHORIA!\n+1 VIDA');
+    return playSound(sc, 'clear');
+  }
   st.bananas++;
   playSound(sc, 'catch');
   sc.hud.icon.setScale(1.5);
